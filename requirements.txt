@@ -15,4 +15,5 @@ python-flutterwave
 python-dotenv==1.0.1
 requests
 watchgod
+APScheduler
 #python-flutterwave==0.7.10
