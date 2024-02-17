@@ -1,5 +1,5 @@
 fastapi 
-bcrypt == 4.0.1
+bcrypt
 uvicorn
 alembic
 sqlalchemy
