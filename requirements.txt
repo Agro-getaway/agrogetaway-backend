@@ -1,4 +1,4 @@
-bcrypt==4.1.2
+bcrypt
 fastapi 
 uvicorn
 alembic
