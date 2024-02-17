@@ -1,4 +1,4 @@
-bcrypt
+--user bcrypt
 fastapi 
 uvicorn
 alembic
