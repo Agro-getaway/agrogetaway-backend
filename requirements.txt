@@ -1,0 +1,18 @@
+fastapi 
+bcrypt == 4.0.1
+uvicorn
+alembic
+sqlalchemy
+psycopg2-binary
+httpx
+passlib
+python-jose
+secure-smtplib==0.1.1
+twilio
+firebase-admin
+google-cloud-storage
+python-flutterwave
+python-dotenv==1.0.1
+requests
+watchgod
+#python-flutterwave==0.7.10
