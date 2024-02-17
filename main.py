@@ -38,5 +38,4 @@ app.include_router(booking_routes.router, prefix="/booking")
 if __name__ == "__main__":
     import uvicorn
     from watchgod import watch
-    uvicorn.run("main:app", host = "0.0.0.1", port = 8002,reload=True, workers=2)
-    # uvicorn main:app --host 0.0.0.1 --port 8002 --reload --workers 2
+    uvicorn.run("main:app", host = "127.0.0.1", port = 8002,reload=True, workers=2)
