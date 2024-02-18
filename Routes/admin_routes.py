@@ -3,15 +3,30 @@ import asyncio
 from Models.models import UsernameChangeRequest
 from Controllers.admin_controllers import (
     create_admin_controller,
-    change_username,
+    # change_username,
     send_password_reset,
-    reset_user_password
+    reset_user_password,
+    generate_signup_token
 )
 router = APIRouter()
 
 @router.get("/")
 async def read_root():
     return {"Admins" : "Hello World"}
+
+router = APIRouter()
+
+@router.post("/generate_signup_token")
+async def generate_signup_token_for_admin(emailbody: dict):
+    email = emailbody["email"]
+    try:
+        result = await generate_signup_token(email)
+        if result:
+            return {"email": email, "token": result["token"]}
+        else:
+            raise HTTPException(status_code=400, detail="Unable to generate token")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/create_admin")
 async def create_admin_route(new_admin: dict):
@@ -21,15 +36,13 @@ async def create_admin_route(new_admin: dict):
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
 
-
-@router.post("/change_username")
-async def change_username_endpoint(request: UsernameChangeRequest):
-    try:
-        response = change_username(request)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+# @router.post("/change_username")
+# async def change_username_endpoint(request: UsernameChangeRequest):
+#     try:
+#         response = change_username(request)
+#         return response
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/request_password_reset")
 async def request_password_reset(credentials: dict):
@@ -50,10 +63,10 @@ async def reset_password_endpoint(token_and_password: dict):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.post("/change_username")
-async def change_username_endpoint(request: UsernameChangeRequest):
-    try:
-        response = change_username(request)
-        return response
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# @router.post("/change_username")
+# async def change_username_endpoint(request: UsernameChangeRequest):
+#     try:
+#         response = change_username(request)
+#         return response
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=str(e))

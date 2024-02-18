@@ -44,16 +44,36 @@ class FirebaseUpload:
         is_production = os.getenv('NODE_ENV') == 'production'
         return f"prod/{file_path}" if is_production else f"dev/{file_path}"
     
-    def add(self, file, file_name):
+    # def add(self, file, file_name):
+    #     try:
+    #         bucket = storage.bucket()
+    #         blob_path = self.path(self.file_path + file_name)
+    #         blob = bucket.blob(blob_path)
+    #         mime_type, _ = guess_type(file_name)
+    #         blob.upload_from_file(file, content_type=mime_type)
+    #         # self.upload_url = blob.public_url
+    #         self.upload_url = blob.generate_signed_url(expiration=datetime.timedelta(hours=1), version="v4")
+    #         return {"url": self.upload_url}
+    #     except Exception as err:
+    #         print(f"Error occurred while uploading: {err}")
+    #         raise
+    def add(self, files, file_names):
         try:
+            if len(files) != len(file_names):
+                raise ValueError("Number of files and file names must match")
+
             bucket = storage.bucket()
-            blob_path = self.path(self.file_path + file_name)
-            blob = bucket.blob(blob_path)
-            mime_type, _ = guess_type(file_name)
-            blob.upload_from_file(file, content_type=mime_type)
-            # self.upload_url = blob.public_url
-            self.upload_url = blob.generate_signed_url(expiration=datetime.timedelta(hours=1), version="v4")
-            return {"url": self.upload_url}
+            results = []
+
+            for file, file_name in zip(files, file_names):
+                blob_path = self.path(self.file_path + file_name)
+                blob = bucket.blob(blob_path)
+                mime_type, _ = guess_type(file_name)
+                blob.upload_from_file(file, content_type=mime_type)
+                upload_url = blob.generate_signed_url(expiration=datetime.timedelta(hours=1), version="v4")
+                results.append({"file_name": file_name, "url": upload_url})
+
+            return results
         except Exception as err:
             print(f"Error occurred while uploading: {err}")
             raise
@@ -145,3 +165,17 @@ if __name__ == "__main__":
 #     print("User created")
 # else:
 #     print("User not created")
+        
+
+# testing multiple
+        
+# if __name__ == "__main__":
+#     file_paths = ["images/esp1.png", "images/esp2.png"]
+#     upload_path = "images/"  
+#     file_names = ["esp6.png", "esp7.png"]
+
+#     firebase_upload = FirebaseUpload(upload_path)
+
+#     with open(file_paths[0], "rb") as file1, open(file_paths[1], "rb") as file2:
+#         result = firebase_upload.add([file1, file2], file_names)
+#         print(result)

@@ -1,4 +1,4 @@
-from fastapi import FastAPI,Depends
+from fastapi import FastAPI,Depends,File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from Controllers.booking_controllers import start_reminder_scheduler
 from Routes import (
@@ -8,8 +8,9 @@ from Routes import (
     Tourist_routes,
     booking_routes
 )
-
 import asyncio
+
+from upload import FirebaseUpload
 
 app = FastAPI()
 app.add_middleware(
@@ -20,9 +21,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+file_upload = FirebaseUpload("images/")
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+@app.post("/upload")
+async def upload_image(files: list[UploadFile] = File(...)):
+    try:
+        file_objects = [await file.read() for file in files]
+        file_names = [file.filename for file in files]
+        
+        result = file_upload.add(file_objects, file_names)
+        return {"message": "Files uploaded successfully", "result": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.on_event("startup")
 async def startup_event():

@@ -115,7 +115,7 @@ def send_booking_email(booking_data):
 
 def approve_booking_controller(booking_dict):
     booking_id = booking_dict["booking_id"]
-    booking = Booking.update_booking_data(session, booking_id, "Approved")
+    booking = Booking.update_booking_data(session, booking_id,"Approved")
     return {"message": "Booking approved successfully", "status": 200}
 
 

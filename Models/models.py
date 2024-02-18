@@ -1,7 +1,11 @@
 from sqlalchemy import Column, Boolean, Float, Integer, String, DateTime,ForeignKey
 from sqlalchemy.orm import relationship
 from Connections.connections import Base,engine
+import jwt
+from Connections.token_and_keys import SECRET_KEY,ALGORITHM
 import datetime
+import secrets
+from datetime import datetime,timedelta
 from hashing import Harsher
 from pydantic import BaseModel
 
@@ -55,23 +59,31 @@ class Admin(Base):
     firstname = Column(String)
     lastname = Column(String)
     email = Column(String, nullable= True, unique=True)
-    employee_access = Column(String, unique=True)
+    phone_number = Column(String, nullable= True, unique=True)
     password = Column(String)
+    role = Column(String , default="admin")
 
     @staticmethod
-    def create_admin(firstname,lastname,email,employee_access,password):
-        print("""Creating admin""")
-        hashed_password = Harsher.get_hash_password(password)
-        admin = Admin(firstname=firstname,lastname=lastname,email=email,employee_access=employee_access,password=hashed_password)
-        return admin
+    def create_admin(db_session,firstname, lastname, email, phone_number, password):
+        try:
+            print("Creating admin")
+            hashed_password = Harsher.get_hash_password(password)
+            admin = Admin(firstname=firstname, lastname=lastname, email=email, phone_number=phone_number, password=hashed_password, role="admin")
+            db_session.add(admin)
+            db_session.commit()
+            return admin
+        except Exception as e:
+            db_session.rollback()
+            print(f"Error occurred during admin creation: {e}")
+            raise e
     
     @staticmethod
     def get_admin(db_session, email_or_access):
-        return db_session.query(Admin).filter((Admin.email == email_or_access) | (Admin.employee_access == email_or_access)).first()
+        return db_session.query(Admin).filter((Admin.email == email_or_access) | (Admin.phone_number == email_or_access)).first()
     
     @staticmethod
-    def username_exists(db_session, employee_access):
-        return db_session.query(Admin).filter(Admin.employee_access == employee_access).first() is not None
+    # def username_exists(db_session, employee_access):
+    #     return db_session.query(Admin).filter(Admin.phone_number == employee_access).first() is not None
     
     def verify_password(self, password):
         return Harsher.verify_password(password, self.password)
@@ -93,9 +105,73 @@ class Admin(Base):
             query = query.filter(Admin.employee_access == phone)
         return query.first()
     
+class AdminSignUpToken(Base):
+    __tablename__ = 'admin_sign_up_token'
+
+    id = Column(Integer, primary_key=True, index=True)
+    jti = Column(String, unique=True, nullable=False)  # JWT ID
+    email = Column(String, nullable=False)
+    time = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default="False")
+
+    @staticmethod
+    def create_token(db_session, email):
+        jti = secrets.token_urlsafe()
+        expiry = datetime.utcnow() + timedelta(hours=24)
+        token = jwt.encode({"email": email, "exp": expiry, "jti": jti}, SECRET_KEY, algorithm=ALGORITHM)
+        new_token_entry = AdminSignUpToken(jti=jti, email=email)
+        db_session.add(new_token_entry)
+        try:
+            db_session.commit()
+            return {"token": token, "email": email}
+        except Exception as e:
+            db_session.rollback()
+            raise e
+
+    @staticmethod
+    def validate_token(db_session, email, token):
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            if payload['email'] != email:
+                return False
+            token_record = db_session.query(AdminSignUpToken).filter(
+                AdminSignUpToken.email == email, 
+                AdminSignUpToken.jti == payload['jti'],
+                AdminSignUpToken.status == "False"
+            ).first()
+            if token_record:
+                token_record.status = "True"
+                db_session.commit()
+                return True
+            return False
+        except jwt.ExpiredSignatureError:
+            return False
+        except jwt.InvalidTokenError:
+            return False
+        
+    @staticmethod
+    def mark_token_as_used(db_session, jti):
+        token_record = db_session.query(AdminSignUpToken).filter(AdminSignUpToken.jti == jti).first()
+        if token_record:
+            token_record.status = "True"
+            db_session.commit()
+            return True
+        return False
+
+    @staticmethod
+    def delete_token(db_session, jti):
+        token_record = db_session.query(AdminSignUpToken).filter(AdminSignUpToken.jti == jti).first()
+        if token_record:
+            db_session.delete(token_record)
+            db_session.commit()
+            return True
+        return False
+
+
 class UsernameChangeRequest(BaseModel):
     current_username: str
     new_username_prefix: str
+
 
 class Farms(Base):
     __tablename__ = 'farms'
@@ -105,16 +181,20 @@ class Farms(Base):
     Description = Column(String)
     Image_url = Column(String)
     farmer_id = Column(Integer, ForeignKey('farmers.id'))
-    status  = Column(String)
+    status = Column(String)
+    added_at = Column(DateTime, default=datetime.utcnow)
+    approved_by = Column(Integer, nullable=True)
+
     farmer = relationship("Farmers", back_populates="farms")
     bookings = relationship("Booking", back_populates="farms")
 
     @staticmethod
-    def create_farm_data(Location,Details,Description,Image_url,farmer_id,status):
+    def create_farm_data(Location, Details, Description, Image_url, farmer_id, status):
         print("""Creating farmer""")
-        farmer = Farms(Location=Location,Details=Details,Description=Description,Image_url=Image_url,farmer_id=farmer_id,status=status)
-        return farmer
-    
+        farm = Farms(Location=Location, Details=Details, Description=Description, Image_url=Image_url, 
+                     farmer_id=farmer_id, status=status)
+        return farm
+
     @staticmethod
     def get_farm_data(db_session, farmer_id):
         return db_session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
@@ -138,9 +218,10 @@ class Farms(Base):
         return db_session.query(Farms).all()
     
     @staticmethod
-    def update_farm_data(db_session, id, status):
+    def update_farm_data(db_session, id, status, approved_by_id=None):
         farm_data = db_session.query(Farms).filter(Farms.id == id).first()
         farm_data.status = status
+        farm_data.approved_by = approved_by_id
         db_session.commit()
         return farm_data
     
@@ -229,13 +310,16 @@ class Booking(Base):
     is_cancelled = Column(Boolean, default=False)
     cancellation_fee = Column(Float, default=0.0)
     rescheduled_to = Column(DateTime, nullable=True)
+    added_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.utcnow) 
     farms = relationship("Farms", back_populates="bookings")
     tourist = relationship("Tourist", back_populates="bookings")
 
     @staticmethod
-    def create_booking(Farmid,Touristid,status,start_datetime,end_datetime,payment_status,payment_amount):
+    def create_booking(Farmid, Touristid, status, start_datetime, end_datetime, payment_status, payment_amount):
         print("""Creating booking""")
-        booking = Booking(Farmid=Farmid,Touristid=Touristid,status=status,start_datetime=start_datetime,end_datetime=end_datetime,payment_status=payment_status,payment_amount=payment_amount)
+        booking = Booking(Farmid=Farmid, Touristid=Touristid, status=status, start_datetime=start_datetime, 
+                          end_datetime=end_datetime, payment_status=payment_status, payment_amount=payment_amount)
         return booking
     
     @staticmethod
@@ -254,6 +338,7 @@ class Booking(Base):
     def update_booking_data(db_session, id, status):
         booking_data = db_session.query(Booking).filter(Booking.id == id).first()
         booking_data.status = status
+        booking_data.updated_at = datetime.utcnow()
         db_session.commit()
         return booking_data
     

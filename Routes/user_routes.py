@@ -3,7 +3,7 @@ import asyncio
 # from Models.models import UsernameChangeRequest
 from Controllers.user_controllers import (
     create_user, 
-    login_user,
+    authenticate_user,
     send_password_reset,
     reset_user_password
 )
@@ -40,10 +40,7 @@ async def login_user_endpoint(user: dict):
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password are required.")
     try:
-        if email.endswith("@Agrogetaway"):
-            return await admin_login(user)  
-        else:
-            return await login_user(user)  
+        return await authenticate_user(user)  
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:

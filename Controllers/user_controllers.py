@@ -1,4 +1,4 @@
-from Models.models import Farmers
+from Models.models import Farmers,Admin
 from fastapi import APIRouter, HTTPException
 from twilio.rest import Client
 from Connections.connections import session
@@ -142,28 +142,45 @@ def send_sms(phone_number):
         print(f"Error sending message to {phone_number}: {str(e)}")
         raise Exception(f"Error sending message to {phone_number}: {str(e)}")
 
-async def login_user(credentials):
+async def authenticate_user(credentials):
     email_or_phone = credentials['email']
     input_password = credentials['password']
 
-    user = Farmers.get_user(session, email_or_phone)
+    farmer  = Farmers.get_user(session, email_or_phone)
 
-    if user and Harsher.verify_password(input_password, user.password):
+    if farmer  and Harsher.verify_password(input_password, farmer.password):
         access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
 
         access_token = create_access_token(
-            data={"sub": user.email},
+            data={"sub": farmer .email},
             expires_delta=access_token_expires
         ) 
-        user_data = {
-            "id": user.id,
-            "email": user.email,
-            "firstname": user.firstname,
-            "lastname": user.lastname,
-            "role": user.role
+        farmer_data = {
+            "id": farmer.id,
+            "email": farmer.email,
+            "firstname": farmer.firstname,
+            "lastname": farmer.lastname,
+            "role": farmer.role
         }
-        return {"data:": user_data,"access_token": access_token, "token_type": "bearer"}
+        return {"data:": farmer_data,"access_token": access_token, "token_type": "bearer"}
     
+    admin  = Admin.get_admin(session, email_or_phone)
+
+    if admin  and Harsher.verify_password(input_password, admin.password):
+        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+
+        access_token = create_access_token(
+            data={"sub": admin.email},
+            expires_delta=access_token_expires
+        ) 
+        admin_data = {
+            "id": admin.id,
+            "email": admin.email,
+            "firstname": admin.firstname,
+            "lastname": admin.lastname,
+            "role": admin.role
+        }
+        return {"data:": admin_data,"access_token": access_token, "token_type": "bearer"}
     else:
         raise Exception("Invalid Username or Password")
     

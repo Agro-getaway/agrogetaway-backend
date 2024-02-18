@@ -1,4 +1,4 @@
-from Models.models import Admin,UsernameChangeRequest
+from Models.models import Admin, UsernameChangeRequest, AdminSignUpToken
 from fastapi import APIRouter, HTTPException
 from Connections.connections import session
 import secrets
@@ -10,7 +10,9 @@ from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from Controllers.user_controllers import create_access_token
+from Controllers.user_controllers import (
+    create_access_token
+    )
 from Connections.token_and_keys import (
     SECRET_KEY,
     ALGORITHM,
@@ -20,54 +22,128 @@ from Connections.token_and_keys import (
     ACCOUNT_SID,
     AUTH_TOKEN,
     TWILIO_PHONE_NUMBER
+
 )
 
-async def create_unique_username(db_session):
-    letter_counter = 65 
-    counter = 1
-    
-    while True:
-        potential_username = f"{chr(letter_counter)}{counter:03}@Agrogetaway"
-        
-        if not Admin.username_exists(db_session, potential_username):
-            return potential_username
+async def generate_signup_token(email):
+    try: 
+        token = AdminSignUpToken.create_token(session, email)
+        if token:
+            send_signup_token_email(email, token)
+            return {"token" : token}
         else:
-            counter += 1
-            if counter > 999:
-                counter = 1
-                letter_counter += 1
-                if letter_counter > 90: 
-                    raise Exception("Exhausted all usernames")
-                
-async def create_admin_controller(new_admin: dict):
-    email = new_admin['email']
-    employee_access = await create_unique_username(session)	
-    password = await create_password()
-    # hashed_password = Harsher.get_hash_password(password)
-
-    admin = Admin.create_admin(new_admin['firstname'], new_admin['lastname'], email, employee_access, password)
-    user_details = {"email":email, "employee_access":employee_access, "password":password, "firstname":new_admin['firstname']}
-    try:
-        session.add(admin)
-        session.commit()
-        session.refresh(admin)
-        send_welcome_email(user_details)
-
+            raise Exception("Token not created")
     except Exception as e:
         print(f"Error occured: {e}")
-        session.rollback()
+        return False
+    
+# an email to the user with the token
+def send_signup_token_email(email, token):
+    sender_email = EMAIL
+    sender_password = EMAIL_PASSWORD
 
-    return {"message":"Admin created successfully","status":200}
+    msg = MIMEMultipart('related')
+    msg['From'] = sender_email
+    msg['To'] = email
+    msg['Subject'] = "Admin Signup Email!"
 
-async def create_password(length=4):
-    password = f"Changemenow@{random.randint(0, 9999):04d}"
-    return password
+    html_body = f"""
+        <html>
+<body style="font-family: Arial, sans-serif; color: #333;">
+    <p>Dear Admin,</p>
+    <br /><br />
+    Welcome to AgroGetaway! Please use the following token to complete your signup process:
+    <br />
+    <p><strong>{token}</strong></p>
+    <p>If you have any questions or require assistance, our support team is always here to help.</p>
+    <p>Thank you for stepping into this vital role within the AgroGetaway community. Together, we'll drive the future of farming.</p>
+    <p>Warm regards,</p>
+    <p>The AgroGetaway Team</p>
+    <p><i>Note: This is an automated message, please do not reply to this email.</i></p>
+</body>
+</html>
+    """
+
+    msg.attach(MIMEText(html_body, 'html'))
+
+    # firebase_url = 'https://firebasestorage.googleapis.com/v0/b/bfamproject-80d95.appspot.com/o/prod%2Fproducts%2F1705940735027_gen_visual.jpeg?alt=media&token=de7a990b-2238-455f-a6d2-1f0ba71f55d2'
+
+    # response = requests.get(firebase_url)
+    # if response.status_code == 200:
+    #     img_data = response.content
+    #     img = MIMEImage(img_data)
+    #     img.add_header('Content-ID', '<company_logo>')
+    #     msg.attach(img)
+    # else:
+    #     print("Failed to retrieve image from Firebase")
+
+    server = smtplib.SMTP('smtp.gmail.com', 587)
+    server.starttls()
+    try:
+        server.login(sender_email, sender_password)
+    except smtplib.SMTPAuthenticationError:
+        print("SMTP Authentication Error: The username or password you entered is not correct.")
+        return
+
+    server.send_message(msg)
+    server.quit()
+    
+# async def create_unique_username(db_session):
+#     letter_counter = 65 
+#     counter = 1
+    
+#     while True:
+#         potential_username = f"{chr(letter_counter)}{counter:03}@Agrogetaway"
+        
+#         if not Admin.username_exists(db_session, potential_username):
+#             return potential_username
+#         else:
+#             counter += 1
+#             if counter > 999:
+#                 counter = 1
+#                 letter_counter += 1
+#                 if letter_counter > 90: 
+#                     raise Exception("Exhausted all usernames")
+                
+async def create_admin_controller(new_admin: dict):
+    email = new_admin["email"]
+    signup_token = new_admin["token"]
+
+    try:
+        # Validating the  token
+        if not AdminSignUpToken.validate_token(session, email, signup_token):
+            raise Exception("Invalid token")
+    except Exception as e:
+        print(f"Error occurred during token validation: {e}")
+        return False
+
+    firstname = new_admin["firstname"]
+    lastname = new_admin["lastname"]
+    email = new_admin["email"]
+    phone_number = new_admin["phone_number"]
+    password = new_admin["password"]
+    
+    try:
+        # Creating the  admin
+        Admin.create_admin(session,firstname, lastname, email, phone_number, password)
+        
+        print("Token status updated")
+        # Send welcome email
+        send_welcome_email(new_admin)
+        
+        return {"message": "Admin created successfully", "status": 200}
+    except Exception as e:
+        print(f"Error occurred during admin creation: {e}")
+        return False
+
+
+# async def create_password(length=4):
+#     password = f"Changemenow@{random.randint(0, 9999):04d}"
+#     return password
 
 def send_welcome_email(user_details):
     sender_email = EMAIL
     sender_password = EMAIL_PASSWORD
-
-    reset_token = secrets.token_urlsafe(20)
 
     # Create the email
     msg = MIMEMultipart('related')
@@ -76,8 +152,6 @@ def send_welcome_email(user_details):
     msg['Subject'] = "Welcome to AgroGetaway!"
     print(f"I am sending to {user_details['email']}")
 
-    access_no = user_details["employee_access"]
-    password = user_details["password"]
     html_body = f"""
         <html>
 <body style="font-family: Arial, sans-serif; color: #333;">
@@ -88,12 +162,6 @@ def send_welcome_email(user_details):
     <p>Welcome to <strong>AgroGetaway</strong> - where we're redefining farming together. As a new administrator, your role is pivotal in shaping the future of sustainable agriculture and enhancing our community's experience.</p>
     <p>We're excited to have you join us in our mission to transform the landscape of farming through technology, knowledge sharing, and community engagement. Your expertise and leadership will be invaluable as we work together to support our network of farmers and enthusiasts.</p>
 
-    <br /><br />
-    <p>Your account has been set up with the following credentials:</p>
-    <p>Username: <strong>{access_no}</strong><br>
-    Password: <strong>{password}</strong></p>
-    <p>We recommend changing your password upon your first login for security reasons.</p>
-    <br />
     <p>If you have any questions or require assistance, our support team is always here to help.</p>
     <p>Thank you for stepping into this vital role within the AgroGetaway community. Together, we'll drive the future of farming.</p>
     <p>Warm regards,</p>
@@ -151,26 +219,26 @@ def reset_admin_password(token, new_password):
 
     return True
 
-def change_username(request):
-    admin = session.query(Admin).filter(Admin.employee_access == request.current_username).first()
+# def change_username(request):
+#     admin = session.query(Admin).filter(Admin.employee_access == request.current_username).first()
 
-    if not admin:
-        raise Exception("Admin not found")
+#     if not admin:
+#         raise Exception("Admin not found")
     
-    new_employee_access = f"{request.new_username_prefix}@Agrogetaway"
+#     new_employee_access = f"{request.new_username_prefix}@Agrogetaway"
 
-    if Admin.username_exists(session, new_employee_access):
-        raise Exception("This Employee access is already taken")
+#     if Admin.username_exists(session, new_employee_access):
+#         raise Exception("This Employee access is already taken")
     
-    admin.employee_access = new_employee_access
+#     admin.employee_access = new_employee_access
 
-    try:
-        session.commit()
-        return {"message":"Employee access number updated successfully"}
-    except Exception as e:
-        print(f"Error in commit: {e}")
-        session.rollback()
-        raise
+#     try:
+#         session.commit()
+#         return {"message":"Employee access number updated successfully"}
+#     except Exception as e:
+#         print(f"Error in commit: {e}")
+#         session.rollback()
+#         raise
 
 def send_password_reset(employee_access):
     user = session.query(Admin).filter(Admin.employee_access == employee_access).first()
