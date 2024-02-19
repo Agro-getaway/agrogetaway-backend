@@ -8,8 +8,8 @@ from Routes import (
     Tourist_routes,
     booking_routes
 )
-import asyncio
-
+import io
+from typing import List
 from upload import FirebaseUpload
 
 app = FastAPI()
@@ -28,9 +28,9 @@ def read_root():
     return {"Hello": "World"}
 
 @app.post("/upload")
-async def upload_image(files: list[UploadFile] = File(...)):
+async def upload_image(files: List[UploadFile] = File(...)):
     try:
-        file_objects = [await file.read() for file in files]
+        file_objects = [io.BytesIO(await file.read()) for file in files]
         file_names = [file.filename for file in files]
         
         result = file_upload.add(file_objects, file_names)

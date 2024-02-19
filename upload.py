@@ -8,7 +8,6 @@ from mimetypes import guess_type
 from dotenv import load_dotenv
 import os
 from Connections.token_and_keys import STORAGE_BUCKET
-# print(STORAGE_BUCKET)
 load_dotenv()
 class FirebaseUpload:
     def __init__(self, file_path):
@@ -110,16 +109,16 @@ class FirebaseUpload:
             raise
 
 ### uploading a file and getting the url
-if __name__ == "__main__":
-    file_path = "images/esp1.png"
-    upload_path = "images/"  
-    file_name = "esp6.png"  
+# if __name__ == "__main__":
+#     file_path = "images/esp1.png"
+#     upload_path = "images/"  
+#     file_name = "esp6.png"  
 
-    firebase_upload = FirebaseUpload(upload_path)
+#     firebase_upload = FirebaseUpload(upload_path)
 
-    with open(file_path, "rb") as file:
-        result = firebase_upload.add(file, file_name)
-        print(result)
+#     with open(file_path, "rb") as file:
+#         result = firebase_upload.add(file, file_name)
+#         print(result)
 
     # print(os.getenv('PRIVATE_KEY'))
 ### updating a file and getting the url
@@ -169,13 +168,13 @@ if __name__ == "__main__":
 
 # testing multiple
         
-# if __name__ == "__main__":
-#     file_paths = ["images/esp1.png", "images/esp2.png"]
-#     upload_path = "images/"  
-#     file_names = ["esp6.png", "esp7.png"]
+if __name__ == "__main__":
+    file_paths = ["images/esp1.png", "images/gen.jpeg"]
+    upload_path = "images/"  
+    file_names = ["esp6.png", "esp7.png"]
 
-#     firebase_upload = FirebaseUpload(upload_path)
+    firebase_upload = FirebaseUpload(upload_path)
 
-#     with open(file_paths[0], "rb") as file1, open(file_paths[1], "rb") as file2:
-#         result = firebase_upload.add([file1, file2], file_names)
-#         print(result)
+    with open(file_paths[0], "rb") as file1, open(file_paths[1], "rb") as file2:
+        result = firebase_upload.add([file1, file2], file_names)
+        print(result)
