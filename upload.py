@@ -81,12 +81,10 @@ class FirebaseUpload:
         try:
             bucket = storage.bucket()
 
-            # Delete the saved file
             old_blob = bucket.blob(self.path(saved_file_path))
             old_blob.delete()
             print(f"Deleted the old file at {saved_file_path}")
 
-            # Upload the new file
             new_blob_path = self.path(self.file_path + new_file_name)
             new_blob = bucket.blob(new_blob_path)
             mime_type, _ = guess_type(new_file_name)

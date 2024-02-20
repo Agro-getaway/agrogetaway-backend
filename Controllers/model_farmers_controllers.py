@@ -1,8 +1,11 @@
-from Models.models import Farms,Admin,Farmers
+from Models.models import Farms,Admin,Farmers,FarmImage
 from fastapi import APIRouter, HTTPException
 # from Connections.connections import session
+from fastapi import UploadFile
+from typing import List
 from sqlalchemy.orm import Session
 from hashing import Harsher
+from upload import FirebaseUpload
 import secrets
 import smtplib
 from datetime import datetime
@@ -20,24 +23,40 @@ from Connections.token_and_keys import (
     TWILIO_PHONE_NUMBER
 )
 
-def create_farmer(db: Session, new_farmer: dict):
-    farm = Farms.create_farm_data(new_farmer['Location'], new_farmer['Details'], new_farmer['Description'], new_farmer['Image_url'], new_farmer['farmer_id'], new_farmer['status'])
-    farm_id = farm.id
-    try:   
-        db.add(farm)
-        db.commit()
-        db.refresh(farm)
-
-        farmer = Farmers.get_user_by_id(db, new_farmer['farmer_id'])
-        full_name = f"{farmer.firstname} {farmer.lastname}"
-        # print(full_name)
-        send_approval_email_to_admins(db,full_name, new_farmer['Location'], farm_id)
-        return {"message":"Farmer created successfully","status":200}
+def create_farm(db: Session, new_farm: dict, files: List[UploadFile]):
+    # Creating a farm entry without images first
+    farm = Farms.create_farm_data(new_farm['Location'], new_farm['Details'], new_farm['Description'], '', new_farm['farmer_id'], new_farm['status'])
+    db.add(farm)
+    db.commit()
+    db.refresh(farm)
     
+    file_upload = FirebaseUpload("farms/")
+    
+    # image uploads
+    file_objects = [file.file for file in files]
+    file_names = [file.filename for file in files]
+    upload_results = file_upload.add(file_objects, file_names)
+
+    for result in upload_results:
+        image_url = result['url'] 
+        new_farm_image = FarmImage(farm_id=farm.id, image_url=image_url, added_at=datetime.utcnow())
+        db.add(new_farm_image)
+        
+    db.commit()
+    try:
+        if upload_results:
+            first_image_url = upload_results[0]['url']
+            farm.Image_url = first_image_url
+            db.commit()
     except Exception as e:
-        print(f"Error occured: {e}")
+        print(f"Error updating farm image URL: {e}")
         db.rollback()
-        return {"message":"An error occured","status":500}
+    
+    farmer = Farmers.get_user_by_id(db, new_farm['farmer_id'])
+    full_name = f"{farmer.firstname} {farmer.lastname}"
+    send_approval_email_to_admins(db, full_name, new_farm['Location'], farm.id)
+    
+    return {"message": "Farmer created successfully", "status": 200, "farm_id": farm.id, "image_urls": [result['url'] for result in upload_results]}
 
 def send_approval_email_to_admins(db: Session, farmer_name, location, farm_id):
     sender_email = EMAIL
@@ -71,7 +90,7 @@ def send_approval_email_to_admins(db: Session, farmer_name, location, farm_id):
                 <p>A new farm in {location} has just registered by {farmer_name} and requires your approval.</p>
                 <p>Please review the submission and approve or reject as necessary.</p>
                 <br />
-                <p><a href="{approval_link}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none;">Approve Farmer</a></p>
+                <p> Please login to the admin dashboard to perform the action.</p>
                 <br />
                 <p>If you have any questions or require further information, please do not hesitate to contact the support team.</p>
                 <br />
@@ -90,17 +109,16 @@ def send_approval_email_to_admins(db: Session, farmer_name, location, farm_id):
 
     server.quit()
     
-def approve_farm(db: Session,farm_dict):
+def approve_farm(db: Session, farm_dict):
     farm_id = farm_dict["farm_id"]
-    
-    farm = Farms.update_farm_data(db, farm_id,"Approved")
-    
+    admin_id = farm_dict["admin_id"]
+    farm = Farms.update_farm_data(db, farm_id, "Approved", admin_id)
     return {"message": "Farm approved successfully", "status": 200}
 
-def reject_farm(db: Session,farm_dict):
+def reject_farm(db: Session, farm_dict):
     farm_id = farm_dict["farm_id"]
-    
-    farm = Farms.update_farm_data(db, farm_id,"Rejected")
+    admin_id = farm_dict["admin_id"]
+    farm = Farms.update_farm_data(db, farm_id, "Rejected", admin_id)
     return {"message": "Farm rejected successfully", "status": 200}
 
 def get_all_approved_farms(db: Session,):
@@ -108,7 +126,6 @@ def get_all_approved_farms(db: Session,):
     return farms
 
 def pending_farms(db: Session,):
-    
     farms = Farms.get_pending_farms(db)
     return farms
 

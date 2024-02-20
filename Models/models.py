@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Boolean, Float, Integer, String, DateTime,ForeignKey
 from sqlalchemy.orm import relationship
 from Connections.connections import Base,engine
-import jwt
+import jwt, random
 from Connections.token_and_keys import SECRET_KEY,ALGORITHM
 import datetime
 import secrets
@@ -109,21 +109,19 @@ class AdminSignUpToken(Base):
     __tablename__ = 'admin_sign_up_token'
 
     id = Column(Integer, primary_key=True, index=True)
-    jti = Column(String, unique=True, nullable=False)  # JWT ID
+    jti = Column(String, unique=True, nullable=False) 
     email = Column(String, nullable=False)
     time = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default="False")
 
     @staticmethod
     def create_token(db_session, email):
-        jti = secrets.token_urlsafe()
-        expiry = datetime.utcnow() + timedelta(hours=24)
-        token = jwt.encode({"email": email, "exp": expiry, "jti": jti}, SECRET_KEY, algorithm=ALGORITHM)
+        jti = str(random.randint(10000000, 99999999))  
         new_token_entry = AdminSignUpToken(jti=jti, email=email)
         db_session.add(new_token_entry)
         try:
             db_session.commit()
-            return {"token": token, "email": email}
+            return {"token": jti, "email": email}
         except Exception as e:
             db_session.rollback()
             raise e
@@ -131,22 +129,17 @@ class AdminSignUpToken(Base):
     @staticmethod
     def validate_token(db_session, email, token):
         try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            if payload['email'] != email:
-                return False
             token_record = db_session.query(AdminSignUpToken).filter(
                 AdminSignUpToken.email == email, 
-                AdminSignUpToken.jti == payload['jti'],
+                AdminSignUpToken.jti == token,
                 AdminSignUpToken.status == "False"
             ).first()
-            if token_record:
+            if token_record and datetime.utcnow() < token_record.expiry:
                 token_record.status = "True"
                 db_session.commit()
                 return True
             return False
-        except jwt.ExpiredSignatureError:
-            return False
-        except jwt.InvalidTokenError:
+        except Exception as e:
             return False
         
     @staticmethod
@@ -190,7 +183,7 @@ class Farms(Base):
 
     @staticmethod
     def create_farm_data(Location, Details, Description, Image_url, farmer_id, status):
-        print("""Creating farmer""")
+        print("""Creating farm""")
         farm = Farms(Location=Location, Details=Details, Description=Description, Image_url=Image_url, 
                      farmer_id=farmer_id, status=status)
         return farm
@@ -218,12 +211,15 @@ class Farms(Base):
         return db_session.query(Farms).all()
     
     @staticmethod
-    def update_farm_data(db_session, id, status, approved_by_id=None):
+    def update_farm_data(db_session, id, status, approved_by_id):
         farm_data = db_session.query(Farms).filter(Farms.id == id).first()
-        farm_data.status = status
-        farm_data.approved_by = approved_by_id
-        db_session.commit()
-        return farm_data
+        if farm_data:
+            farm_data.status = status
+            farm_data.approved_by = approved_by_id
+            db_session.commit()
+            return farm_data
+        else:
+            raise Exception("Farm not found")
     
     @staticmethod
     def delete_farm_data(db_session, id):
@@ -252,6 +248,14 @@ class Farms(Base):
     def farms_owned_by_farmer(db_session, farmer_id):
         return db_session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
     
+class FarmImage(Base):
+    __tablename__ = 'farm_images'
+
+    id = Column(Integer, primary_key=True, index=True)
+    farm_id = Column(Integer, ForeignKey('farms.id')) 
+    image_url = Column(String, nullable=False)
+    added_at = Column(DateTime, default=datetime.utcnow)
+
 class Tourist(Base):
     __tablename__ = 'tourists'
     id = Column(Integer, primary_key=True, index=True)

@@ -6,7 +6,8 @@ from Controllers.admin_controllers import (
     # change_username,
     send_password_reset,
     reset_user_password,
-    generate_signup_token
+    generate_signup_token,
+    # approve_farm
 )
 router = APIRouter()
 
@@ -20,13 +21,14 @@ router = APIRouter()
 async def generate_signup_token_for_admin(emailbody: dict):
     email = emailbody["email"]
     try:
-        result = await generate_signup_token(email)
-        if result:
-            return {"email": email, "token": result["token"]}
+        token = await generate_signup_token(email)
+        if token:
+            return {"email": email, "token": token}
         else:
             raise HTTPException(status_code=400, detail="Unable to generate token")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/create_admin")
 async def create_admin_route(new_admin: dict):
@@ -70,3 +72,10 @@ async def reset_password_endpoint(token_and_password: dict):
 #         return response
 #     except Exception as e:
 #         raise HTTPException(status_code=400, detail=str(e))
+    
+# @router.put("/approve_farm")
+# async def approve_farm_route(farm: dict):
+#     try:
+#         return approve_farm(db, farm)
+#     except Exception as e:
+#         return HTTPException(status_code=400, detail=str(e))

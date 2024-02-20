@@ -1,8 +1,10 @@
-from fastapi import Depends,APIRouter, HTTPException
+from fastapi import Depends,APIRouter, HTTPException, Depends, HTTPException, UploadFile, File, Form
 from Connections.connections import SessionLocal
 from sqlalchemy.orm import Session
+from typing import List
+
 from Controllers.model_farmers_controllers import (
-    create_farmer,
+    create_farm,
     approve_farm,
     reject_farm,
     get_all_approved_farms,
@@ -27,12 +29,35 @@ async def read_root():
     return {"Farmers" : "Hello World"}
 
 @router.post("/create_farm")
-async def create_farmer_route(new_farmer: dict, db: Session = Depends(get_db)):
+# async def create_farmer_route(new_farmer: dict, db: Session = Depends(get_db)):
+#     try:
+#         farmer = create_farm(db, new_farmer)
+#         return farmer
+#     except Exception as e:
+#         return HTTPException(status_code=400, detail=str(e))
+    
+async def create_farm_route(
+    location: str = Form(...), 
+    details: str = Form(...), 
+    description: str = Form(...), 
+    farmer_id: int = Form(...), 
+    status: str = Form(...), 
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db)
+):
+    new_farmer = {
+        "Location": location,
+        "Details": details,
+        "Description": description,
+        "farmer_id": farmer_id,
+        "status": status
+    }
     try:
-        farmer = create_farmer(db, new_farmer)
-        return farmer
+        farm_response = create_farm(db, new_farmer, files)
+        return farm_response
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
+
     
 @router.put("/approve_farm")
 async def approve_farm_route(farm: dict, db: Session = Depends(get_db)):

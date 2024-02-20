@@ -27,16 +27,17 @@ from Connections.token_and_keys import (
 
 async def generate_signup_token(email):
     try: 
-        token = AdminSignUpToken.create_token(session, email)
-        if token:
-            send_signup_token_email(email, token)
-            return {"token" : token}
+        token_info = AdminSignUpToken.create_token(session, email)  # This returns a dictionary with "token" and "email"
+        if token_info:
+            token = token_info['token'] 
+            send_signup_token_email(email, token) 
+            return token 
         else:
             raise Exception("Token not created")
     except Exception as e:
-        print(f"Error occured: {e}")
+        print(f"Error occurred: {e}")
         return False
-    
+
 # an email to the user with the token
 def send_signup_token_email(email, token):
     sender_email = EMAIL
@@ -329,5 +330,6 @@ async def admin_login(credentials):
         raise HTTPException(status_code=401, detail="Invalid password.")
 # else:
 #     raise HTTPException(status_code=404, detail="Admin not found.")
+    
 
 
