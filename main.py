@@ -6,7 +6,8 @@ from Routes import (
     admin_routes,
     model_farmer_routes,
     Tourist_routes,
-    booking_routes
+    booking_routes,
+    file_routes
 )
 import io
 from typing import List
@@ -48,6 +49,7 @@ app.include_router(admin_routes.router, prefix="/admin")
 app.include_router(model_farmer_routes.router, prefix="/farm")
 app.include_router(Tourist_routes.router, prefix="/tourist")
 app.include_router(booking_routes.router, prefix="/booking")
+app.include_router(file_routes.router, prefix="/file")
 
 if __name__ == "__main__":
     import uvicorn
