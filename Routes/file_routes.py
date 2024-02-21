@@ -40,21 +40,38 @@ async def update_image_route(image_id: int, file: UploadFile = File(...), db: Se
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.delete("/delete_image/{image_id}", response_model=Any)
+# @router.delete("/delete_image/", response_model=dict)
+# async def delete_image(image_id: int, db: Session = Depends(get_db)):
+#     try:
+#         farm_image = db.query(FarmImage).filter(FarmImage.id == image_id).first()
+#         if not farm_image:
+#             raise HTTPException(status_code=404, detail="Image not found")
+    
+#         file_upload = FirebaseUpload("farms/")
+#         file_upload.delete(farm_image.image_url)  
+
+#         # Delete the database record
+#         db.delete(farm_image)
+#         db.commit()
+        
+#         return {"message": "Image deleted successfully"}
+#     except Exception as e:
+#         db.rollback()
+#         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete_image/", response_model=dict)
 async def delete_image(image_id: int, db: Session = Depends(get_db)):
     try:
         farm_image = db.query(FarmImage).filter(FarmImage.id == image_id).first()
         if not farm_image:
             raise HTTPException(status_code=404, detail="Image not found")
         
-        file_upload = FirebaseUpload("farms/")
-        file_upload.delete(farm_image.image_url)  
-
-        # Delete the database record
         db.delete(farm_image)
-        db.commit()
+        db.commit() 
         
         return {"message": "Image deleted successfully"}
     except Exception as e:
+    
         db.rollback()
+       
         raise HTTPException(status_code=500, detail=str(e))

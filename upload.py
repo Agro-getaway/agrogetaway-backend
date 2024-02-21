@@ -97,13 +97,13 @@ class FirebaseUpload:
             raise
 
 
-    def delete(self):
+    def delete(self, file_path):
         try:
             bucket = storage.bucket()
-            blob = bucket.blob(self.path(self.file_path))
+            blob = bucket.blob(file_path)  
             blob.delete()
         except Exception as err:
-            print("Error occurred while deleting:", err)
+            print(f"Error occurred while deleting: {err}")
             raise
 
 ### uploading a file and getting the url
@@ -132,17 +132,6 @@ class FirebaseUpload:
 
 # import pyrebase
 
-# config = {
-#     "apiKey": "AIzaSyCXLC__dVs04mWP3O6DnWsBsXmMtZxcxxw",
-#     "authDomain": "agrogetaway-391ae.firebaseapp.com",
-#     "projectId": "agrogetaway-391ae",
-#     "storageBucket": "agrogetaway-391ae.appspot.com",
-#     "messagingSenderId": "1013076315102",
-#     "appId": "1:1013076315102:web:a3fef510c7d433e6ddab4f",
-#     "measurementId": "G-3KXMXCXDQY",
-#     "serviceAccount": "ServiceAccount.json",
-#     "databaseURL":"https://agrogetaway-391ae-default-rtdb.firebaseio.com/"
-# }
 
 # firebase = pyrebase.initialize_app(config)
 # auth = firebase.auth()
