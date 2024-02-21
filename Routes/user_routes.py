@@ -29,7 +29,7 @@ async def create_user_route(new_user: dict):
         user = create_user(new_user)
         return user
     except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
+        return HTTPException(status_code=400, detail=str(e), error = "failed to create user")
 
 
 @router.post("/login")
@@ -45,7 +45,9 @@ async def login_user_endpoint(user: dict):
         raise http_exc
     except Exception as e:
         print(f"Login error: {str(e)}")
-        raise HTTPException(status_code=400, detail="An error occurred during login.")
+        
+        raise HTTPException(status_code=400, detail="Invalid Username or Password")
+        # return {"message": "Reset link sent to your email address"}
         
 @router.post("/request_password_reset")
 async def request_password_reset(credentials: dict):
@@ -54,7 +56,7 @@ async def request_password_reset(credentials: dict):
         send_password_reset(user_email)
         return {"message": "Reset link sent to your email address"}
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e), error = "password reset link not sent")
     
 @router.post("/reset_password")
 async def reset_password_endpoint(token_and_password: dict):
