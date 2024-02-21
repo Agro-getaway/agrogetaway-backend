@@ -191,12 +191,11 @@ class Farms(Base):
         return db_session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
     
     @staticmethod
-    def update_farm_stored_data(db_session, id, Location,Details,Description,Image_url):
+    def update_farm_stored_data(db_session, id, Location, Details, Description):
         farm_data = db_session.query(Farms).filter(Farms.id == id).first()
         farm_data.Location = Location
         farm_data.Details = Details
         farm_data.Description = Description
-        farm_data.Image_url = Image_url
         db_session.commit()
         return farm_data
     

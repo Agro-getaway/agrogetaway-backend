@@ -147,12 +147,12 @@ def get_farm_data_for_farmer(db: Session, farmer_id):
 
     return farms
 
-def update_farm_stored(db: Session,farm_dict):
-    farm = Farms.update_farm_stored_data(db, farm_dict["id"], farm_dict["Location"], farm_dict["Details"], farm_dict["Description"], farm_dict["Image_url"])
+def update_farm_stored(db: Session, farm):
+    farm = Farms.update_farm_stored_data(db, farm["id"], farm["Location"], farm["Details"], farm["Description"])
     return {"message": "Farm updated successfully", "status": 200}
 
-def delete_farm(db: Session,farm_dict):
-    farm_id = farm_dict["farm_id"]
+def delete_farm(db: Session,farm):
+    farm_id = farm["farm_id"]
     
     farm = Farms.delete_farm_data(db, farm_id)
     return {"message": "Farm deleted successfully", "status": 200}
