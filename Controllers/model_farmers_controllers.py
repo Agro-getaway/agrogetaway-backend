@@ -1,6 +1,6 @@
 from Models.models import Farms,Admin,Farmers,FarmImage
 from fastapi import APIRouter, HTTPException
-# from Connections.connections import session
+from Controllers.file_controllers import fetch_farm_images
 from fastapi import UploadFile
 from typing import List
 from sqlalchemy.orm import Session
@@ -137,8 +137,14 @@ def get_approved_farms_count(db: Session,):
     farms = Farms.get_farm_count(db)
     return {"count_value" : farms}
 
-def get_farm_data_for_farmer(db: Session,farmer_id):
+def get_farm_data_for_farmer(db: Session, farmer_id):
     farms = Farms.get_farm_data(db, farmer_id)
+
+    for farm in farms:
+        farm_id = farm.id
+        farm_images = fetch_farm_images(db, farm_id)
+        farm.images = farm_images
+
     return farms
 
 def update_farm_stored(db: Session,farm_dict):

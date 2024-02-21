@@ -31,7 +31,6 @@ async def create_user_route(new_user: dict):
     except Exception as e:
         return HTTPException(status_code=400, detail="failed to create user.")
 
-
 @router.post("/login")
 async def login_user_endpoint(user: dict):
     email = user.get("email", "")

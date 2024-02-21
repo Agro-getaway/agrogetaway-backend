@@ -160,11 +160,9 @@ class AdminSignUpToken(Base):
             return True
         return False
 
-
 class UsernameChangeRequest(BaseModel):
     current_username: str
     new_username_prefix: str
-
 
 class Farms(Base):
     __tablename__ = 'farms'
@@ -230,19 +228,19 @@ class Farms(Base):
     
     @staticmethod
     def get_approved_farms(db_session):
-        return db_session.query(Farms).filter(Farms.status == "Approved").all()
+        return db_session.query(Farms).filter(Farms.status == "approved").all()
     
     @staticmethod
     def get_pending_farms(db_session):
-        return db_session.query(Farms).filter(Farms.status == "Requesting").all()
+        return db_session.query(Farms).filter(Farms.status == "requesting").all()
     
     @staticmethod
     def get_pending_count(db_session):
-        return db_session.query(Farms).filter(Farms.status == "Requesting").count()
+        return db_session.query(Farms).filter(Farms.status == "requesting").count()
     
     @staticmethod
     def get_farm_count(db_session):
-        return db_session.query(Farms).filter(Farms.status == "Approved").count()
+        return db_session.query(Farms).filter(Farms.status == "approved").count()
     
     @staticmethod
     def farms_owned_by_farmer(db_session, farmer_id):
