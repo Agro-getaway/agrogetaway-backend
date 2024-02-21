@@ -106,7 +106,7 @@ async def get_farm_data_for_farmer_route(
     farmer_id: int,
     db: Session = Depends(get_db)
 ):
-    print(f"The farmer id is {farmer_id}")
+   
     try:
         return get_farm_data_for_farmer(db, farmer_id)
     except Exception as e:

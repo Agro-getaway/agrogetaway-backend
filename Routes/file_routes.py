@@ -14,6 +14,10 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+@router.get("/")
+async def read_root():
+    return {"Booking" : "Hello World"}
 
 @router.get("/farm_images/", response_model=List[str])
 async def get_farm_images(farm_id: int, db: Session = Depends(get_db)):
