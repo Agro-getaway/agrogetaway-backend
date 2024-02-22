@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Farm Images</title>
+    <script>
+        async function fetchAndDisplayImages() {
+            const farmId =3; 
+            const response = await fetch(`http://127.0.0.1:8002/file/farm_images/?farm_id=${farmId}`);
+            const imageUrls = await response.json();
+            console.log(imageUrls); 
+            const imageContainer = document.getElementById('image-container');
+            imageContainer.innerHTML = ''; 
+            
+            imageUrls.forEach(url => {
+                console.log("Displaying URL:", url); 
+                const imgElement = document.createElement('img');
+                imgElement.src = url;
+                imgElement.style.width = '100px';
+                imgElement.style.height = '100px';
+                imgElement.style.marginRight = '10px';
+                imageContainer.appendChild(imgElement);
+            });
+        }
+        
+        async function uploadImages(event) {
+            event.preventDefault(); 
+            
+            const formData = new FormData();
+            const files = document.querySelector('[type=file]').files;
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+
+            formData.append('farm_id', 3);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8002/upload', { 
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    alert('Images uploaded successfully!');
+                    fetchAndDisplayImages(); 
+                } else {
+                    alert('Failed to upload images.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error uploading images.');
+            }
+        }
+
+        window.onload = () => {
+            fetchAndDisplayImages();
+            document.getElementById('upload-form').addEventListener('submit', uploadImages);
+        };
+    </script>
+</head>
+<body>
+    <h2>Current Farm Images</h2>
+    <div id="image-container"></div>
+
+    <h2>Upload New Images</h2>
+    <form id="upload-form">
+        <input type="file" name="files" multiple>
+        <button type="submit">Upload New Images</button>
+    </form>
+</body>
+</html>

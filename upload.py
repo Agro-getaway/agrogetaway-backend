@@ -3,7 +3,7 @@ from firebase_admin import credentials, storage
 import os
 from google.cloud import storage as gcs
 import base64
-import datetime
+from datetime import datetime, timedelta
 from mimetypes import guess_type
 from dotenv import load_dotenv
 import os
@@ -69,7 +69,8 @@ class FirebaseUpload:
                 blob = bucket.blob(blob_path)
                 mime_type, _ = guess_type(file_name)
                 blob.upload_from_file(file, content_type=mime_type)
-                upload_url = blob.generate_signed_url(expiration=datetime.timedelta(hours=1), version="v4")
+                seven_days_from_now = datetime.now() + timedelta(days=7)
+                upload_url = new_blob.generate_signed_url(expiration=datetime.timedelta(hours=1), version="v4")
                 results.append({"file_name": file_name, "url": upload_url})
 
             return results
