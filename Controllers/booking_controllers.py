@@ -133,12 +133,14 @@ def get_booking_for_farmer(farmer_id):
             session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
         )
         if not farms:
+            session.rollback()
             raise HTTPException(status_code=404, detail="Farmer has no farms")
 
         farm_ids = [farm.id for farm in farms]
         bookings = Booking.get_bookings_for_farm(session, farm_ids)
         return bookings
     except Exception as e:
+        session.rollback()
         print(f"Error while fetching appointments for farmer {farmer_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -151,6 +153,7 @@ def get_booking_for_farmer_by_status(farmer_id, status):
             session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
         )
         if not farms:
+            session.rollback()
             raise HTTPException(status_code=404, detail="Farmer has no farms")
 
         farm_ids = [farm.id for farm in farms]
@@ -161,6 +164,7 @@ def get_booking_for_farmer_by_status(farmer_id, status):
         )
         return pending_bookings
     except Exception as e:
+        session.rollback()
         print(f"Error while fetching pending appointments for farmer {farmer_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -221,6 +225,7 @@ def get_upcoming_bookings_and_send_reminders():
 def cancel_booking(booking_id, db_session):
     booking = db_session.query(Booking).filter(Booking.id == booking_id).first()
     if not booking:
+        db_session.rollback()
         raise HTTPException(status_code=404, detail="Booking not found")
 
     booking.is_cancelled = True
@@ -234,6 +239,7 @@ def cancel_booking(booking_id, db_session):
 def reschedule_booking(booking_id, new_start_datetime, new_end_datetime, db_session):
     booking = db_session.query(Booking).filter(Booking.id == booking_id).first()
     if not booking:
+        db_session.rollback()
         raise HTTPException(status_code=404, detail="Booking not found")
 
     booking.start_datetime = new_start_datetime

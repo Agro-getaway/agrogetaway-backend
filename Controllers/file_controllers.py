@@ -10,6 +10,7 @@ def fetch_farm_images(db: Session, farm_id: int) -> List[str]:
 def update_farm_image(db: Session, image_id: int, new_file: Any) -> str:
     farm_image = db.query(FarmImage).filter(FarmImage.id == image_id).first()
     if not farm_image:
+        db.rollback()
         raise Exception("Image not found")
 
     file_upload = FirebaseUpload("farms/")
@@ -22,6 +23,7 @@ def update_farm_image(db: Session, image_id: int, new_file: Any) -> str:
 def delete_farm_image(db: Session, image_id: int) -> None:
     farm_image = db.query(FarmImage).filter(FarmImage.id == image_id).first()
     if not farm_image:
+        db.rollback()
         raise Exception("Image not found")
 
     file_upload = FirebaseUpload("farms/")

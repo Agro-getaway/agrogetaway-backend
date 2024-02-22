@@ -146,9 +146,9 @@ async def authenticate_user(credentials):
     email_or_phone = credentials['email']
     input_password = credentials['password']
 
-    farmer  = Farmers.get_user(session, email_or_phone)
+    farmer = Farmers.get_user(session, email_or_phone)
 
-    if farmer  and Harsher.verify_password(input_password, farmer.password):
+    if farmer and Harsher.verify_password(input_password, farmer.password):
         access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
 
         access_token = create_access_token(

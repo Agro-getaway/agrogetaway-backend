@@ -116,31 +116,52 @@ class AdminSignUpToken(Base):
 
     @staticmethod
     def create_token(db_session, email):
-        jti = str(random.randint(10000000, 99999999))  
-        new_token_entry = AdminSignUpToken(jti=jti, email=email)
-        db_session.add(new_token_entry)
+        jti = str(random.randint(10000000, 99999999))
+        existing_token = db_session.query(AdminSignUpToken).filter_by(email=email).first()
+        if existing_token:
+            existing_token.jti = jti
+            existing_token.time = datetime.utcnow()
+            existing_token.status = "False"
+        else:
+            new_token_entry = AdminSignUpToken(jti=jti, email=email)
+            db_session.add(new_token_entry)
+        
         try:
             db_session.commit()
             return {"token": jti, "email": email}
         except Exception as e:
             db_session.rollback()
-            raise e
+            print(f"Error in token creation or update: {e}")
+            return None
 
     @staticmethod
     def validate_token(db_session, email, token):
         try:
             token_record = db_session.query(AdminSignUpToken).filter(
-                AdminSignUpToken.email == email, 
+                AdminSignUpToken.email == email,
                 AdminSignUpToken.jti == token,
                 AdminSignUpToken.status == "False"
             ).first()
-            if token_record and datetime.utcnow() < token_record.expiry:
-                token_record.status = "True"
-                db_session.commit()
-                return True
-            return False
+            token_validity_period = timedelta(hours=24)
+
+            if token_record:
+                token_age = datetime.utcnow() - token_record.time
+                if token_age <= token_validity_period:
+                    token_record.status = "True"
+                    db_session.commit()
+                    return True
+                else:
+                    
+                    print(f"Token {token} for email {email} has expired.")
+                    return False
+            else:
+            
+                print(f"No valid token found for email {email} with token {token}.")
+                return False
         except Exception as e:
+            print(f"Exception during token validation for email {email} with token {token}: {e}")
             return False
+
         
     @staticmethod
     def mark_token_as_used(db_session, jti):

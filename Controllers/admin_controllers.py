@@ -27,7 +27,7 @@ from Connections.token_and_keys import (
 
 async def generate_signup_token(email):
     try: 
-        token_info = AdminSignUpToken.create_token(session, email)  # This returns a dictionary with "token" and "email"
+        token_info = AdminSignUpToken.create_token(session, email) 
         if token_info:
             token = token_info['token'] 
             send_signup_token_email(email, token) 
@@ -88,55 +88,27 @@ def send_signup_token_email(email, token):
 
     server.send_message(msg)
     server.quit()
-    
-# async def create_unique_username(db_session):
-#     letter_counter = 65 
-#     counter = 1
-    
-#     while True:
-#         potential_username = f"{chr(letter_counter)}{counter:03}@Agrogetaway"
-        
-#         if not Admin.username_exists(db_session, potential_username):
-#             return potential_username
-#         else:
-#             counter += 1
-#             if counter > 999:
-#                 counter = 1
-#                 letter_counter += 1
-#                 if letter_counter > 90: 
-#                     raise Exception("Exhausted all usernames")
-                
+       
 async def create_admin_controller(new_admin: dict):
     email = new_admin["email"]
     signup_token = new_admin["token"]
 
     try:
-        # Validating the  token
         if not AdminSignUpToken.validate_token(session, email, signup_token):
             raise Exception("Invalid token")
     except Exception as e:
         print(f"Error occurred during token validation: {e}")
-        return False
+        return {"message": str(e), "status": 400}  
 
-    firstname = new_admin["firstname"]
-    lastname = new_admin["lastname"]
-    email = new_admin["email"]
-    phone_number = new_admin["phone_number"]
-    password = new_admin["password"]
-    
     try:
-        # Creating the  admin
-        Admin.create_admin(session,firstname, lastname, email, phone_number, password)
-        
+        Admin.create_admin(session, new_admin["firstname"], new_admin["lastname"], email, new_admin["phone_number"], new_admin["password"])
         print("Token status updated")
-        # Send welcome email
         send_welcome_email(new_admin)
-        
         return {"message": "Admin created successfully", "status": 200}
     except Exception as e:
         print(f"Error occurred during admin creation: {e}")
-        return False
 
+        return {"message": str(e), "status": 400}  
 
 # async def create_password(length=4):
 #     password = f"Changemenow@{random.randint(0, 9999):04d}"
@@ -207,6 +179,7 @@ def reset_admin_password(token, new_password):
 
     admin = session.query(Admin).filter(Admin.employee_access == employee_access).first()
     if not admin:
+        session.rollback()
         raise Exception("Admin not found")
 
     admin.update_password(new_password)
@@ -245,6 +218,7 @@ def send_password_reset(employee_access):
     user = session.query(Admin).filter(Admin.employee_access == employee_access).first()
 
     if not user:
+        session.rollback()
         raise Exception("User not found")
 
     reset_token = create_access_token(data={"sub": employee_access}, expires_delta=timedelta(hours=1))
@@ -293,6 +267,7 @@ def reset_user_password(token, new_password):
 
     admin = session.query(Admin).filter(Admin.employee_access == employee_access).first()
     if not admin:
+        session.rollback()
         raise Exception("Admin not found")
 
     admin.update_password(new_password)
