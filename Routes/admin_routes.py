@@ -21,7 +21,7 @@ router = APIRouter()
 async def generate_signup_token_for_admin(emailbody: dict):
     email = emailbody["email"]
     try:
-        token = await generate_signup_token(email)
+        token = await generate_signup_token(email,"Admin")
         if token:
             return {"email": email, "token": token}
         else:

@@ -25,12 +25,12 @@ from Connections.token_and_keys import (
 
 )
 
-async def generate_signup_token(email):
+async def generate_signup_token(email,role):
     try: 
         token_info = AdminSignUpToken.create_token(session, email) 
         if token_info:
             token = token_info['token'] 
-            send_signup_token_email(email, token) 
+            send_signup_token_email(email, token, role) 
             return token 
         else:
             raise Exception("Token not created")
@@ -39,19 +39,19 @@ async def generate_signup_token(email):
         return False
 
 # an email to the user with the token
-def send_signup_token_email(email, token):
+def send_signup_token_email(email, token, role):
     sender_email = EMAIL
     sender_password = EMAIL_PASSWORD
 
     msg = MIMEMultipart('related')
     msg['From'] = sender_email
     msg['To'] = email
-    msg['Subject'] = "Admin Signup Email!"
+    msg['Subject'] = f"{role} Signup Email!"
 
     html_body = f"""
         <html>
 <body style="font-family: Arial, sans-serif; color: #333;">
-    <p>Dear Admin,</p>
+    <p>Dear {role},</p>
     <br /><br />
     Welcome to AgroGetaway! Please use the following token to complete your signup process:
     <br />

@@ -19,7 +19,7 @@ class Farmers(Base):
     role = Column(String)
     phonenumber = Column(String)
     password = Column(String)
-    farms = relationship("Farms", back_populates="farmer")
+    # farms = relationship("Farms", back_populates="farmer")
 
     @staticmethod
     def create_user(firstname,lastname,email,role,phonenumber,password):
@@ -50,6 +50,49 @@ class Farmers(Base):
             query = query.filter(Farmers.email == email)
         if phone:
             query = query.filter(Farmers.phonenumber == phone)
+        return query.first()
+
+class ModelFarmers(Base):
+    __tablename__ = 'modelfarmers'
+
+    id = Column(Integer, primary_key=True, index=True) 
+    firstname = Column(String)
+    lastname = Column(String)
+    email = Column(String, nullable= True, unique=True)
+    role = Column(String)
+    phonenumber = Column(String)
+    password = Column(String)
+    farms = relationship("Farms", back_populates="modelfarmer")
+
+    @staticmethod
+    def create_model_farmer(firstname,lastname,email,phonenumber,password):
+        print("""Creating user""")
+        hashed_password = Harsher.get_hash_password(password)
+        user = ModelFarmers(firstname=firstname,lastname=lastname,email=email,role="modelfarmer",phonenumber=phonenumber,password=hashed_password)
+        return user
+    
+    @staticmethod
+    def get_model_farmer(db_session, email_or_phone):
+        return db_session.query(ModelFarmers).filter((ModelFarmers.email == email_or_phone) | (ModelFarmers.phonenumber == email_or_phone)).first()
+
+    def verify_password(self, password):
+        return Harsher.verify_password(password, self.password)
+    
+    def update_password(self, new_password):
+        hashed_password = Harsher.get_hash_password(new_password)
+        print(f"Updating password to: {hashed_password}") 
+        self.password = hashed_password
+
+    def get_model_farmer_by_id(db_session, id):
+        return db_session.query(ModelFarmers).filter(ModelFarmers.id == id).first()
+
+    @staticmethod
+    def get_model_farmer_by_email_or_phone(db_session, email, phone):
+        query = db_session.query(ModelFarmers)
+        if email:
+            query = query.filter(ModelFarmers.email == email)
+        if phone:
+            query = query.filter(ModelFarmers.phonenumber == phone)
         return query.first()
 
 class Admin(Base):
@@ -136,6 +179,7 @@ class AdminSignUpToken(Base):
 
     @staticmethod
     def validate_token(db_session, email, token):
+        print(f"received token {token} for email {email}")
         try:
             token_record = db_session.query(AdminSignUpToken).filter(
                 AdminSignUpToken.email == email,
@@ -192,13 +236,14 @@ class Farms(Base):
     Details = Column(String)
     Description = Column(String)
     Image_url = Column(String)
-    farmer_id = Column(Integer, ForeignKey('farmers.id'))
+    farmer_id = Column(Integer, ForeignKey('modelfarmers.id'))
     status = Column(String)
     added_at = Column(DateTime, default=datetime.utcnow)
     approved_by = Column(Integer, nullable=True)
 
-    farmer = relationship("Farmers", back_populates="farms")
+    # farmer = relationship("Farmers", back_populates="farms")
     bookings = relationship("Booking", back_populates="farms")
+    modelfarmer = relationship("ModelFarmers", back_populates="farms")
 
     @staticmethod
     def create_farm_data(Location, Details, Description, Image_url, farmer_id, status):

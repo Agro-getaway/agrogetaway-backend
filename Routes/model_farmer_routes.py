@@ -1,128 +1,68 @@
-from fastapi import Depends,APIRouter, HTTPException, Depends, HTTPException, UploadFile, File, Form
-from Connections.connections import SessionLocal
-from sqlalchemy.orm import Session
-from typing import List
-
+from fastapi import APIRouter, HTTPException
+import asyncio
+from  Connections.connections import session
+from Models.models import AdminSignUpToken
 from Controllers.model_farmers_controllers import (
-    create_farm,
-    approve_farm,
-    reject_farm,
-    get_all_approved_farms,
-    get_pending_farms_count,
-    pending_farms,
-    get_approved_farms_count,
-    get_farm_data_for_farmer,
-    update_farm_stored,
-    delete_farm
+    create_user, 
+    send_password_reset,
+    reset_user_password
 )
+from Controllers.admin_controllers import generate_signup_token
 
 router = APIRouter()
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/")
 async def read_root():
-    return {"Farmers" : "Hello World"}
+    return {"Model Farmers" : "Hello World"}
 
-@router.post("/create_farm")
-# async def create_farmer_route(new_farmer: dict, db: Session = Depends(get_db)):
-#     try:
-#         farmer = create_farm(db, new_farmer)
-#         return farmer
-#     except Exception as e:
-#         return HTTPException(status_code=400, detail=str(e))
-    
-async def create_farm_route(
-    location: str = Form(...), 
-    details: str = Form(...), 
-    description: str = Form(...), 
-    farmer_id: int = Form(...), 
-    status: str = Form(...), 
-    files: List[UploadFile] = File(...),
-    db: Session = Depends(get_db)
-):
-    new_farmer = {
-        "Location": location,
-        "Details": details,
-        "Description": description,
-        "farmer_id": farmer_id,
-        "status": status
-    }
+@router.post("/generate_signup_token")
+async def generate_signup_token_for_admin(emailbody: dict):
+    email = emailbody["email"]
     try:
-        farm_response = create_farm(db, new_farmer, files)
-        return farm_response
+        token = await generate_signup_token(email,"Model Farmer")
+        if token:
+            return {"email": email, "token": token}
+        else:
+            raise HTTPException(status_code=400, detail="Unable to generate token")
     except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
-    
-@router.put("/approve_farm")
-async def approve_farm_route(farm: dict, db: Session = Depends(get_db)):
+@router.post("/model_farmer")
+async def create_model_farmer_route(new_model_farmer: dict):
+    email = new_model_farmer["email"]
+    signup_token = new_model_farmer["token"]
     try:
-        return approve_farm(db, farm)
+        if not AdminSignUpToken.validate_token(session, email, signup_token):
+            raise Exception("Invalid token")
     except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-    
-@router.put("/reject_farm")
-async def reject_farm_route(farm: dict, db: Session = Depends(get_db)):
+        print(f"Error occurred during token validation: {e}")
+        return {"message": str(e), "status": 400} 
     try:
-        return reject_farm(db, farm)
+        
+        user = create_user(new_model_farmer)
+        return user 
+    
     except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-    
-@router.get("/get_all_approved_farms")
-async def get_all_approved_farms_route(db: Session = Depends(get_db)):
+        print(f"Error occurred during model farmer creation: {e}")
+        return {"message": "Failed to create model farmer", "status": 400}
+
+        
+@router.post("/request_password_reset")
+async def request_password_reset(credentials: dict):
+    user_email = credentials["email"]
     try:
-        return get_all_approved_farms(db)
+        send_password_reset(user_email)
+        return {"message": "Reset link sent to your email address"}
     except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="password reset link not sent")
     
-@router.get("/get_all_pending_farms")
-async def get_all_pending_farms_route(db: Session = Depends(get_db)):
+@router.post("/reset_password")
+async def reset_password_endpoint(token_and_password: dict):
+    token = token_and_password["token"]
+    new_password = token_and_password["new_password"]
     try:
-        return pending_farms(db)
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-    
-@router.get("/get_pending_count")
-async def get_pending_farms_count_route(db: Session = Depends(get_db)):
-    try:
-        return get_pending_farms_count(db)
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-    
-@router.get("/get_approved_count")
-async def get_approved_farms_count_route(db: Session = Depends(get_db)):
-    try:
-        return get_approved_farms_count(db)
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-    
-@router.get("/get_farm_data_for_farmer/")
-async def get_farm_data_for_farmer_route(
-    farmer_id: int,
-    db: Session = Depends(get_db)
-):
-   
-    try:
-        return get_farm_data_for_farmer(db, farmer_id)
+        reset_user_password(token, new_password)
+        return {"message": "Password reset successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-@router.put("/update_farm_stored")
-async def update_farm_stored_route(farm: dict, db: Session = Depends(get_db)):
-    print(f"farm : {farm}")
-    try:
-        return update_farm_stored(db, farm)
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))
-    
-@router.delete("/delete_farm")
-async def delete_farm_route(farm_id: int, db: Session = Depends(get_db)):
-    try:
-        return delete_farm(db, farm_id)
-    except Exception as e:
-        return HTTPException(status_code=400, detail=str(e))

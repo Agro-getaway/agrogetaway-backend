@@ -1,4 +1,4 @@
-from Models.models import Farmers,Admin
+from Models.models import Farmers,Admin,ModelFarmers
 from fastapi import APIRouter, HTTPException
 from twilio.rest import Client
 from Connections.connections import session
@@ -164,6 +164,24 @@ async def authenticate_user(credentials):
         }
         return {"data:": farmer_data,"access_token": access_token, "token_type": "bearer"}
     
+    modelfarmer = ModelFarmers.get_model_farmer(session, email_or_phone)
+
+    if modelfarmer and Harsher.verify_password(input_password, modelfarmer.password):
+        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+
+        access_token = create_access_token(
+            data={"sub": modelfarmer.email},
+            expires_delta=access_token_expires
+        ) 
+        modelfarmer_data = {
+            "id": modelfarmer.id,
+            "email": modelfarmer.email,
+            "firstname": modelfarmer.firstname,
+            "lastname": modelfarmer.lastname,
+            "role": modelfarmer.role
+        }
+        return {"data:": modelfarmer_data,"access_token": access_token, "token_type": "bearer"}
+
     admin  = Admin.get_admin(session, email_or_phone)
 
     if admin  and Harsher.verify_password(input_password, admin.password):
