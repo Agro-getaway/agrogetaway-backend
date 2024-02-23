@@ -214,14 +214,14 @@ def reset_admin_password(token, new_password):
 #         session.rollback()
 #         raise
 
-def send_password_reset(employee_access):
-    user = session.query(Admin).filter(Admin.employee_access == employee_access).first()
+def send_password_reset(email):
+    user = session.query(Admin).filter(Admin.email == email).first()
 
     if not user:
         session.rollback()
         raise Exception("User not found")
 
-    reset_token = create_access_token(data={"sub": employee_access}, expires_delta=timedelta(hours=1))
+    reset_token = create_access_token(data={"sub": email}, expires_delta=timedelta(hours=1))
     reset_link = f"https://frontend-link.com/reset_password?token={reset_token}"
     send_reset_email(user.email, reset_link)
     return True

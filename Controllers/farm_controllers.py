@@ -110,13 +110,13 @@ def send_approval_email_to_admins(db: Session, farmer_name, location, farm_id):
 def approve_farm(db: Session, farm_dict):
     farm_id = farm_dict["farm_id"]
     admin_id = farm_dict["admin_id"]
-    farm = Farms.update_farm_data(db, farm_id, "Approved", admin_id)
+    farm = Farms.update_farm_data(db, farm_id, "approved", admin_id)
     return {"message": "Farm approved successfully", "status": 200}
 
 def reject_farm(db: Session, farm_dict):
     farm_id = farm_dict["farm_id"]
     admin_id = farm_dict["admin_id"]
-    farm = Farms.update_farm_data(db, farm_id, "Rejected", admin_id)
+    farm = Farms.update_farm_data(db, farm_id, "rejected", admin_id)
     return {"message": "Farm rejected successfully", "status": 200}
 
 def get_all_approved_farms(db: Session,):

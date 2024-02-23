@@ -232,12 +232,14 @@ class UsernameChangeRequest(BaseModel):
 class Farms(Base):
     __tablename__ = 'farms'
     id = Column(Integer, primary_key=True, index=True)
-    Location = Column(String)
-    Details = Column(String)
-    Description = Column(String)
-    Image_url = Column(String)
     farmer_id = Column(Integer, ForeignKey('modelfarmers.id'))
+    Location = Column(String)
     status = Column(String)
+    name = Column(String)
+    method = Column(String)
+    services = Column(String)
+    farm_description = Column(String)
+    method_description = Column(String)
     added_at = Column(DateTime, default=datetime.utcnow)
     approved_by = Column(Integer, nullable=True)
 
@@ -246,10 +248,10 @@ class Farms(Base):
     modelfarmer = relationship("ModelFarmers", back_populates="farms")
 
     @staticmethod
-    def create_farm_data(Location, Details, Description, Image_url, farmer_id, status):
+    def create_farm_data(farmer_id,Location, status, Name, Method, Services, farm_description, method_description):
         print("""Creating farm""")
-        farm = Farms(Location=Location, Details=Details, Description=Description, Image_url=Image_url, 
-                     farmer_id=farmer_id, status=status)
+        farm = Farms(Location=Location, Name=Name, Method=Method, Services=Services,farm_description = farm_description, 
+                    method_description = method_description, farmer_id=farmer_id, status=status)
         return farm
 
     @staticmethod
@@ -257,12 +259,12 @@ class Farms(Base):
         return db_session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
     
     @staticmethod
-    def update_farm_stored_data(db_session, id, Location, Details, Description):
+    def update_farm_stored_data(db_session, id, Location,Name, Method, Services, farm_description, method_description):
         farm_data = db_session.query(Farms).filter(Farms.id == id).first()
-        farm_data.Location = Location
-        farm_data.Details = Details
-        farm_data.Description = Description
-        db_session.commit()
+        # farm_data.Location = Location
+        # farm_data.Details = Details
+        # farm_data.Description = Description
+        # db_session.commit()
         return farm_data
     
     @staticmethod
@@ -417,6 +419,49 @@ class Booking(Base):
     @staticmethod
     def get_bookings_for_farm(db_session, farm_ids):
         return db_session.query(Booking).filter(Booking.Farmid.in_(farm_ids)).all()
+    
+class Agents(Base):
+    __tablename__ = 'agents'
+    id = Column(Integer, primary_key=True, index=True)
+    Name = Column(String)
+    Email = Column(String)
+    Phonenumber = Column(String)
+    Password = Column(String)
+    status  = Column(String)
+
+    @staticmethod
+    def create_agent_data(Name,Email,Phonenumber,Password,status):
+        print("""Creating agent""")
+        agent = Agents(Name=Name, Email = Email, Phonenumber=Phonenumber, Password=Password, status=status)
+        return agent
+    
+    @staticmethod
+    def get_agent_data(db_session, id):
+        return db_session.query(Agents).filter(Agents.id == id).first()
+    
+    @staticmethod
+    def get_agent_data_by_id(db_session, id):
+        return db_session.query(Agents).filter(Agents.id == id).first()
+    
+    @staticmethod
+    def get_all_agent_data(db_session):
+        return db_session.query(Agents).all()
+    
+    @staticmethod
+    def update_agent_data(db_session,data):
+        agent_data = db_session.query(Agents).filter(Agents.id == data["id"]).first()
+        agent_data.Name = data["Name"]
+        agent_data.Email = data["Email"]
+        agent_data.Phonenumber = data["Phonenumber"]
+        db_session.commit()
+        return {"message": "Agent updated successfully", "status": 200}
+    
+    @staticmethod
+    def delete_agent_data(db_session, id):
+        agent_data = db_session.query(Agents).filter(Agents.id == id).first()
+        db_session.delete(agent_data)
+        db_session.commit()
+        return agent_data
     
 # Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
