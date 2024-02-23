@@ -250,7 +250,7 @@ class Farms(Base):
     @staticmethod
     def create_farm_data(farmer_id,Location, status, Name, Method, Services, farm_description, method_description):
         print("""Creating farm""")
-        farm = Farms(Location=Location, Name=Name, Method=Method, Services=Services,farm_description = farm_description, 
+        farm = Farms(Location=Location, name=Name, method=Method, services=Services,farm_description = farm_description, 
                     method_description = method_description, farmer_id=farmer_id, status=status)
         return farm
 
@@ -259,12 +259,15 @@ class Farms(Base):
         return db_session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
     
     @staticmethod
-    def update_farm_stored_data(db_session, id, Location,Name, Method, Services, farm_description, method_description):
+    def update_farm_stored_data(db_session, id, Location, Name, Method, Services, farm_description, method_description):
         farm_data = db_session.query(Farms).filter(Farms.id == id).first()
-        # farm_data.Location = Location
-        # farm_data.Details = Details
-        # farm_data.Description = Description
-        # db_session.commit()
+        farm_data.Location = Location
+        farm_data.name = Name
+        farm_data.method = Method
+        farm_data.services = Services
+        farm_data.farm_description = farm_description
+        farm_data.method_description = method_description
+        db_session.commit()
         return farm_data
     
     @staticmethod

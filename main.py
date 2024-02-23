@@ -54,7 +54,6 @@ app.include_router(booking_routes.router, prefix="/booking")
 app.include_router(file_routes.router, prefix="/file")
 app.include_router(model_farmer_routes.router, prefix="/model_farmer")
 
-
 if __name__ == "__main__":
     import uvicorn
     from watchgod import watch

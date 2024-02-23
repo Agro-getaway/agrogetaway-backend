@@ -115,14 +115,13 @@ def send_booking_email(booking_data):
 
 def approve_booking_controller(booking_dict):
     booking_id = booking_dict["booking_id"]
-    booking = Booking.update_booking_data(session, booking_id,"Approved")
+    booking = Booking.update_booking_data(session, booking_id,"approved")
     return {"message": "Booking approved successfully", "status": 200}
-
 
 def reject_booking_controller(booking_dict):
 
     booking_id = booking_dict["booking_id"]
-    booking = Booking.update_booking_data(session, booking_id, "Rejected")
+    booking = Booking.update_booking_data(session, booking_id, "rejected")
     return {"message": "Booking rejected successfully", "status": 200}
 
 

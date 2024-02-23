@@ -28,29 +28,26 @@ def get_db():
 async def read_root():
     return {"Farmers" : "Hello World"}
 
-@router.post("/create_farm")
-# async def create_farmer_route(new_farmer: dict, db: Session = Depends(get_db)):
-#     try:
-#         farmer = create_farm(db, new_farmer)
-#         return farmer
-#     except Exception as e:
-#         return HTTPException(status_code=400, detail=str(e))
-    
+@router.post("/create_farm") 
 async def create_farm_route(
+    farmer_id: int = Form(...),
     location: str = Form(...), 
-    details: str = Form(...), 
-    description: str = Form(...), 
-    farmer_id: int = Form(...), 
-    status: str = Form(...), 
+    name: str = Form(...), 
+    method: str = Form(...), 
+    services: str = Form(...),
+    farm_description: str = Form(...),
+    method_description: str = Form(...),
     files: List[UploadFile] = File(...),
     db: Session = Depends(get_db)
 ):
     new_farmer = {
         "Location": location,
-        "Details": details,
-        "Description": description,
+        "name": name,
+        "method": method,
+        "services": services,
         "farmer_id": farmer_id,
-        "status": status
+        "farm_description":farm_description,
+        "method_description":method_description
     }
     try:
         farm_response = create_farm(db, new_farmer, files)

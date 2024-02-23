@@ -25,7 +25,7 @@ from Connections.token_and_keys import (
 
 def create_farm(db: Session, new_farm: dict, files: List[UploadFile]):
     # Creating a farm entry without images first
-    farm = Farms.create_farm_data(new_farm['Location'], new_farm['Details'], new_farm['Description'], '', new_farm['farmer_id'], new_farm['status'])
+    farm = Farms.create_farm_data(new_farm['farmer_id'],new_farm['Location'],"requesting", new_farm['name'], new_farm['method'], new_farm['services'],new_farm['farm_description'],new_farm['method_description'])
     db.add(farm)
     db.commit()
     db.refresh(farm)
@@ -146,7 +146,8 @@ def get_farm_data_for_farmer(db: Session, farmer_id):
     return farms
 
 def update_farm_stored(db: Session, farm):
-    farm = Farms.update_farm_stored_data(db, farm["id"], farm["Location"], farm["Details"], farm["Description"])
+    farm = Farms.update_farm_stored_data(db, farm["id"], farm["location"], farm["name"], farm["method"], farm["services"],farm["farm_description"],farm["method_description"])
+                #  update_farm_stored_data(db_session, id, Location, Name, Method, Services, farm_description, method_description):
     return {"message": "Farm updated successfully", "status": 200}
 
 def delete_farm(db: Session,farm):

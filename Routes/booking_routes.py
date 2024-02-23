@@ -38,7 +38,7 @@ async def get_bookings_for_farmer(farmer_id: int):
 # geting all pending bookings 
 @router.get("/pending_bookings/")
 async def get_pending_bookings(farmer_id: int):
-    status = "Requesting"
+    status = "requesting"
     try:
         bookings = get_booking_for_farmer_by_status(farmer_id, status)
         return bookings
