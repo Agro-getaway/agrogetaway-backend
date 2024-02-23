@@ -8,7 +8,8 @@ from Routes import (
     admin_routes,
     Tourist_routes,
     booking_routes,
-    file_routes
+    file_routes,
+    agent_routes
 )
 import io
 from typing import List
@@ -44,7 +45,7 @@ async def upload_image(files: List[UploadFile] = File(...)):
 async def startup_event():
     start_reminder_scheduler()
     
-
+app.include_router(agent_routes.router, prefix="/agent")
 app.include_router(user_routes.router, prefix="/user")# understanding tags=["User"], dependencies=[Depends(get_token_header)]
 app.include_router(admin_routes.router, prefix="/admin")
 app.include_router(farm_routes.router, prefix="/farm")
@@ -52,6 +53,7 @@ app.include_router(Tourist_routes.router, prefix="/tourist")
 app.include_router(booking_routes.router, prefix="/booking")
 app.include_router(file_routes.router, prefix="/file")
 app.include_router(model_farmer_routes.router, prefix="/model_farmer")
+
 
 if __name__ == "__main__":
     import uvicorn

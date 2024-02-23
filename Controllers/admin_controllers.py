@@ -33,8 +33,10 @@ async def generate_signup_token(email,role):
             send_signup_token_email(email, token, role) 
             return token 
         else:
+
             raise Exception("Token not created")
     except Exception as e:
+        session.rollback()
         print(f"Error occurred: {e}")
         return False
 
@@ -106,6 +108,7 @@ async def create_admin_controller(new_admin: dict):
         send_welcome_email(new_admin)
         return {"message": "Admin created successfully", "status": 200}
     except Exception as e:
+        session.rollback()
         print(f"Error occurred during admin creation: {e}")
 
         return {"message": str(e), "status": 400}  

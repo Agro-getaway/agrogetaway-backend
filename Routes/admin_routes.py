@@ -15,8 +15,6 @@ router = APIRouter()
 async def read_root():
     return {"Admins" : "Hello World"}
 
-router = APIRouter()
-
 @router.post("/generate_signup_token")
 async def generate_signup_token_for_admin(emailbody: dict):
     email = emailbody["email"]

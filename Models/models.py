@@ -422,17 +422,19 @@ class Booking(Base):
     
 class Agents(Base):
     __tablename__ = 'agents'
+
     id = Column(Integer, primary_key=True, index=True)
-    Name = Column(String)
+    Firstname = Column(String)
+    Lastname = Column(String)
     Email = Column(String)
     Phonenumber = Column(String)
     Password = Column(String)
     status  = Column(String)
 
     @staticmethod
-    def create_agent_data(Name,Email,Phonenumber,Password,status):
+    def create_agent(Firstname, Lastname, Email,Phonenumber,Password,status):
         print("""Creating agent""")
-        agent = Agents(Name=Name, Email = Email, Phonenumber=Phonenumber, Password=Password, status=status)
+        agent = Agents(Firstname=Firstname, Lastname = Lastname, Email = Email, Phonenumber=Phonenumber, Password=Password, status=status)
         return agent
     
     @staticmethod
