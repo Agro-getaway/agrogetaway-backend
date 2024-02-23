@@ -69,8 +69,7 @@ class FirebaseUpload:
                 blob = bucket.blob(blob_path)
                 mime_type, _ = guess_type(file_name)
                 blob.upload_from_file(file, content_type=mime_type)
-                seven_days_from_now = datetime.now() + timedelta(days=7)
-                upload_url = new_blob.generate_signed_url(expiration=datetime.timedelta(hours=1), version="v4")
+                upload_url = blob.generate_signed_url(expiration=timedelta(hours=1), version="v4")
                 results.append({"file_name": file_name, "url": upload_url})
 
             return results
@@ -159,7 +158,7 @@ class FirebaseUpload:
 if __name__ == "__main__":
     file_paths = ["images/esp1.png", "images/gen.jpeg"]
     upload_path = "images/"  
-    file_names = ["esp6.png", "esp7.png"]
+    file_names = ["esp60.png", "esp09.png"]
 
     firebase_upload = FirebaseUpload(upload_path)
 

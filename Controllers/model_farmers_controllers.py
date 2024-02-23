@@ -27,7 +27,7 @@ client = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 def create_user(new_user: dict):
     email = new_user.get('email', None)
-    phonenumber = new_user.get('phonenumber', None)
+    phonenumber = new_user.get('phone_number', None)
 
     if not email and not phonenumber:
         raise ValueError("Either email or phone number must be provided.")

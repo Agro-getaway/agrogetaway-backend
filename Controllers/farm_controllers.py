@@ -1,4 +1,4 @@
-from Models.models import Farms,Admin,Farmers,FarmImage
+from Models.models import Farms,Admin,FarmImage,ModelFarmers
 from fastapi import APIRouter, HTTPException
 from Controllers.file_controllers import fetch_farm_images
 from fastapi import UploadFile
@@ -52,17 +52,16 @@ def create_farm(db: Session, new_farm: dict, files: List[UploadFile]):
         print(f"Error updating farm image URL: {e}")
         db.rollback()
     
-    farmer = Farmers.get_user_by_id(db, new_farm['farmer_id'])
+    farmer = ModelFarmers.get_model_farmer_by_id(db, new_farm['farmer_id'])
     full_name = f"{farmer.firstname} {farmer.lastname}"
     send_approval_email_to_admins(db, full_name, new_farm['Location'], farm.id)
     
-    return {"message": "Farmer created successfully", "status": 200, "farm_id": farm.id, "image_urls": [result['url'] for result in upload_results]}
+    return {"message": "Farm created successfully", "status": 200, "farm_id": farm.id, "image_urls": [result['url'] for result in upload_results]}
 
 def send_approval_email_to_admins(db: Session, farmer_name, location, farm_id):
     sender_email = EMAIL
     sender_password = EMAIL_PASSWORD
     
-
     admin_emails = [admin.email for admin in Admin.get_all_admins_email(db)]
 
     server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -72,7 +71,6 @@ def send_approval_email_to_admins(db: Session, farmer_name, location, farm_id):
     except smtplib.SMTPAuthenticationError as e:
         print(f"SMTP Authentication Error: {e}")
         return {"message": "Failed to send email", "status": 500}
-
 
     for admin_email in admin_emails:
         msg = MIMEMultipart('related')
