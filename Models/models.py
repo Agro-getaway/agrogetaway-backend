@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Boolean, Float, Integer, String, DateTime,ForeignKey
+from sqlalchemy import Column, Boolean, Float, Integer, String, DateTime,ForeignKey,Enum as SQLAEnum
 from sqlalchemy.orm import relationship
+from enum import Enum
 from Connections.connections import Base,engine
 import jwt, random
 from Connections.token_and_keys import SECRET_KEY,ALGORITHM
@@ -467,6 +468,136 @@ class Agents(Base):
         db_session.delete(agent_data)
         db_session.commit()
         return agent_data
+    
+class Community(Base):
+    __tablename__ = 'community'
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    profile_picture = Column(String)
+    created_by = Column(Integer, ForeignKey('farmers.id'))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    followers = relationship("CommunityFollowers", back_populates="community")
+    # posts = relationship("CommunityPosts", back_populates="community")
+    @staticmethod
+    def create_community(Name, Profile_picture,created_by):
+        print("""Creating community""")
+        community = Community(name=Name, profile_picture = Profile_picture, created_by=created_by)
+        return community
+    
+    @staticmethod
+    def get_community(db_session, id):
+        return db_session.query(Community).filter(Community.id == id).first()
+
+    @staticmethod
+    def get_all_community(db_session):
+        return db_session.query(Community).all()
+    
+    @staticmethod
+    def update_community(db_session,data):
+        community = db_session.query(Community).filter(Community.id == data["id"]).first()
+        community.name = data["name"]
+        community.profile_picture = data["profile_picture"]
+        community.created_by = data["created_by"]
+        db_session.commit()
+        return {"message": "Community updated successfully", "status": 200}
+    
+    @staticmethod
+    def delete_community(db_session, id):
+        community = db_session.query(Community).filter(Community.id == id).first()
+        db_session.delete(community)
+        db_session.commit()
+        return community
+
+class RoleEnum(Enum):
+    ADMIN = "admin"
+    OWNER = "owner"
+    FOLLOWER = "follower"
+    
+class CommunityFollowers(Base):
+    __tablename__ = 'community_followers'
+
+    id = Column(Integer, primary_key=True, index=True)
+    community_id = Column(Integer, ForeignKey('community.id'))
+    follower_id = Column(Integer, ForeignKey('farmers.id'))
+    followed_at = Column(DateTime, default=datetime.utcnow)
+    role = Column(SQLAEnum(RoleEnum), default=RoleEnum.FOLLOWER.value)
+    community = relationship("Community", back_populates="followers")
+    # posts = relationship("CommunityPosts", back_populates="community")
+
+    @staticmethod
+    def create_community_follower(db_session, community_id, follower_id, role):
+
+        if role not in [RoleEnum.ADMIN.value, RoleEnum.OWNER.value, RoleEnum.FOLLOWER.value]:
+            raise ValueError("Invalid role specified")
+
+        community_follower = CommunityFollowers(community_id=community_id, follower_id=follower_id, role=role)
+        db_session.add(community_follower)
+        db_session.commit()
+        return community_follower
+
+    
+    @staticmethod
+    def get_community_follower(db_session, id):
+        return db_session.query(CommunityFollowers).filter(CommunityFollowers.id == id).first()
+
+    @staticmethod
+    def get_all_community_followers(db_session):
+        return db_session.query(CommunityFollowers).all()
+    
+    @staticmethod
+    def update_community_follower(db_session,data):
+        community_follower = db_session.query(CommunityFollowers).filter(CommunityFollowers.id == data["id"]).first()
+        community_follower.community_id = data["community_id"]
+        community_follower.follower_id = data["follower_id"]
+        db_session.commit()
+        return {"message": "Community follower updated successfully", "status": 200}
+    
+    @staticmethod
+    def delete_community_follower(db_session, id):
+        community_follower = db_session.query(CommunityFollowers).filter(CommunityFollowers.id == id).first()
+        db_session.delete(community_follower)
+        db_session.commit()
+        return community_follower
+
+class CommunityMessages(Base):
+    __tablename__ = 'community_messages'
+
+    id = Column(Integer, primary_key=True, index=True)
+    community_id = Column(Integer, ForeignKey('community.id'))
+    sender_id = Column(Integer, ForeignKey('farmers.id'))
+    message = Column(String)
+    sent_at = Column(DateTime, default=datetime.utcnow)
+
+    @staticmethod
+    def create_community_message(community_id, sender_id, message):
+        print("""Creating community message""")
+        community_message = CommunityMessages(community_id=community_id, sender_id=sender_id, message=message)
+        return community_message
+    
+    @staticmethod
+    def get_community_message(db_session, id):
+        return db_session.query(CommunityMessages).filter(CommunityMessages.id == id).first()
+
+    @staticmethod
+    def get_all_community_messages(db_session):
+        return db_session.query(CommunityMessages).all()
+    
+    @staticmethod
+    def Edit_community_message(db_session,data):
+        community_message = db_session.query(CommunityMessages).filter(CommunityMessages.id == data["id"]).first()
+        community_message.community_id = data["community_id"]
+        community_message.sender_id = data["sender_id"]
+        community_message.message = data["message"]
+        db_session.commit()
+        return {"message": "Community message updated successfully", "status": 200}
+    
+    @staticmethod
+    def delete_community_message(db_session, id):
+        community_message = db_session.query(CommunityMessages).filter(CommunityMessages.id == id).first()
+        db_session.delete(community_message)
+        db_session.commit()
+        return community_message
     
 # Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
