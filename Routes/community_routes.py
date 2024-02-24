@@ -6,7 +6,8 @@ from typing import List
 from Controllers.community_controllers import (
     create_community,
     add_community_follower,
-    create_community_message
+    create_community_message,
+    community_messages_with_sender_info
 )
 
 router = APIRouter()
@@ -25,10 +26,15 @@ async def read_root():
 def create_community_route(community: dict, db: Session = Depends(get_db)):
     return create_community(db = db, community_data = community)
 
-@router.post("/communities/{community_id}/followers/")
-def add_follower_to_community(folloer_data, db: Session = Depends(get_db)):
-    return add_community_follower(db=db, community_id=folloer_data["community_id"], follower_id=folloer_data["follower_id"], role=folloer_data["role"])
+@router.post("/communities/followers/")
+def add_follower_to_community(follower_data: dict, db: Session = Depends(get_db)):
+    return add_community_follower(db=db, community_id=follower_data["community_id"], follower_id=follower_data["follower_id"])
 
-@router.post("/communities/{community_id}/messages/")
-def create_message_in_community(community_message, db: Session = Depends(get_db)):
+@router.post("/communities/messages/")
+def create_message_in_community(community_message: dict, db: Session = Depends(get_db)):
     return create_community_message(db=db, community_id=community_message["community_id"], sender_id=community_message["sender_id"], message=community_message["message"])
+
+@router.get("/communities/messages/")
+def read_community_messages(community_id: int, db: Session = Depends(get_db)):
+    messages = community_messages_with_sender_info(db_session=db, community_id=community_id)
+    return messages

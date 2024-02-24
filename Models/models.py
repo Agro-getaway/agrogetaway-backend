@@ -475,7 +475,7 @@ class Community(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
     profile_picture = Column(String)
-    created_by = Column(Integer, ForeignKey('farmers.id'))
+    created_by = Column(Integer, ForeignKey('modelfarmers.id'))
     created_at = Column(DateTime, default=datetime.utcnow)
     followers = relationship("CommunityFollowers", back_populates="community")
     # posts = relationship("CommunityPosts", back_populates="community")
@@ -509,34 +509,40 @@ class Community(Base):
         db_session.commit()
         return community
 
-class RoleEnum(Enum):
-    ADMIN = "admin"
-    OWNER = "owner"
-    FOLLOWER = "follower"
+# class RoleEnum(Enum):
+#     ADMIN = "admin"
+#     OWNER = "owner"
+#     FOLLOWER = "follower"
     
 class CommunityFollowers(Base):
     __tablename__ = 'community_followers'
 
     id = Column(Integer, primary_key=True, index=True)
     community_id = Column(Integer, ForeignKey('community.id'))
-    follower_id = Column(Integer, ForeignKey('farmers.id'))
+    follower_id = Column(Integer)
     followed_at = Column(DateTime, default=datetime.utcnow)
-    role = Column(SQLAEnum(RoleEnum), default=RoleEnum.FOLLOWER.value)
+    role = Column(String, default="follower")
     community = relationship("Community", back_populates="followers")
     # posts = relationship("CommunityPosts", back_populates="community")
 
     @staticmethod
     def create_community_follower(db_session, community_id, follower_id, role):
 
-        if role not in [RoleEnum.ADMIN.value, RoleEnum.OWNER.value, RoleEnum.FOLLOWER.value]:
-            raise ValueError("Invalid role specified")
+        # if role not in [RoleEnum.ADMIN.value, RoleEnum.OWNER.value, RoleEnum.FOLLOWER.value]:
+        #     raise ValueError("Invalid role specified")
 
         community_follower = CommunityFollowers(community_id=community_id, follower_id=follower_id, role=role)
         db_session.add(community_follower)
         db_session.commit()
         return community_follower
-
     
+    @staticmethod
+    def create_community_owner(db_session, community_id, follower_id):
+        community_follower = CommunityFollowers(community_id=community_id, follower_id=follower_id, role="owner")
+        db_session.add(community_follower)
+        db_session.commit()
+        return community_follower
+
     @staticmethod
     def get_community_follower(db_session, id):
         return db_session.query(CommunityFollowers).filter(CommunityFollowers.id == id).first()
@@ -559,6 +565,57 @@ class CommunityFollowers(Base):
         db_session.delete(community_follower)
         db_session.commit()
         return community_follower
+# class CommunityFollower(Base):
+#     __tablename__ = 'community_follower'
+
+#     id = Column(Integer, primary_key=True, index=True)
+#     community_id = Column(Integer, ForeignKey('community.id'))
+#     follower_id = Column(Integer)
+#     followed_at = Column(DateTime, default=datetime.utcnow)
+#     role = Column(String, default="follower")
+#     community = relationship("Community", back_populates="followers")
+#     # posts = relationship("CommunityPosts", back_populates="community")
+
+#     @staticmethod
+#     def create_community_follower(db_session, community_id, follower_id, role):
+
+#         # if role not in [RoleEnum.ADMIN.value, RoleEnum.OWNER.value, RoleEnum.FOLLOWER.value]:
+#         #     raise ValueError("Invalid role specified")
+
+#         community_follower = CommunityFollower(community_id=community_id, follower_id=follower_id, role=role)
+#         db_session.add(community_follower)
+#         db_session.commit()
+#         return community_follower
+    
+#     @staticmethod
+#     def create_community_owner(db_session, community_id, follower_id):
+#         community_follower = CommunityFollower(community_id=community_id, follower_id=follower_id, role="owner")
+#         db_session.add(community_follower)
+#         db_session.commit()
+#         return community_follower
+
+#     @staticmethod
+#     def get_community_follower(db_session, id):
+#         return db_session.query(CommunityFollower).filter(CommunityFollower.id == id).first()
+
+#     @staticmethod
+#     def get_all_community_followers(db_session):
+#         return db_session.query(CommunityFollower).all()
+    
+#     @staticmethod
+#     def update_community_follower(db_session,data):
+#         community_follower = db_session.query(CommunityFollower).filter(CommunityFollower.id == data["id"]).first()
+#         community_follower.community_id = data["community_id"]
+#         community_follower.follower_id = data["follower_id"]
+#         db_session.commit()
+#         return {"message": "Community follower updated successfully", "status": 200}
+    
+#     @staticmethod
+#     def delete_community_follower(db_session, id):
+#         community_follower = db_session.query(CommunityFollower).filter(CommunityFollower.id == id).first()
+#         db_session.delete(community_follower)
+#         db_session.commit()
+#         return community_follower
 
 class CommunityMessages(Base):
     __tablename__ = 'community_messages'

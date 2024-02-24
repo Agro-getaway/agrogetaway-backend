@@ -9,7 +9,8 @@ from Routes import (
     Tourist_routes,
     booking_routes,
     file_routes,
-    agent_routes
+    agent_routes,
+    community_routes
 )
 import io
 from typing import List
@@ -53,6 +54,7 @@ app.include_router(Tourist_routes.router, prefix="/tourist")
 app.include_router(booking_routes.router, prefix="/booking")
 app.include_router(file_routes.router, prefix="/file")
 app.include_router(model_farmer_routes.router, prefix="/model_farmer")
+app.include_router(community_routes.router, prefix="/community")
 
 if __name__ == "__main__":
     import uvicorn
