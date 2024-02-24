@@ -7,7 +7,10 @@ def create_event(db : Session, event_data):
     db.add(db_event)
     db.commit()
     db.refresh(db_event)
-    return db_event
+    return {"message": "Event created successfully", "status": 200, "event_id": db_event.id}
+
+def get_all_events(db : Session):
+    return db.query(Event).all()
 
 def get_events_for_farm(db : Session, farm_id):
     return db.query(Event).filter(Event.farm_id == farm_id).all()
