@@ -655,6 +655,50 @@ class CommunityMessages(Base):
         db_session.delete(community_message)
         db_session.commit()
         return community_message
+
+class Event(Base):
+    __tablename__ = 'events'
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(String)
+    start_time = Column(DateTime)
+    end_time = Column(DateTime)
+    image_url = Column(String)
+
+    @staticmethod
+    def create_event(db_session, name, description, start_time, end_time, image_url):
+        event = Event(name=name, description=description, start_time=start_time, end_time=end_time, image_url=image_url)
+        db_session.add(event)
+        db_session.commit()
+        return event
+    
+    @staticmethod
+    def get_event(db_session, id):
+        return db_session.query(Event).filter(Event.id == id).first()
+    
+    @staticmethod
+    def get_all_events(db_session):
+        return db_session.query(Event).all()
+    
+    @staticmethod
+    def update_event(db_session, id, name, description, start_time, end_time, image_url):
+        event = db_session.query(Event).filter(Event.id == id).first()
+        event.name = name
+        event.description = description
+        event.start_time = start_time
+        event.end_time = end_time
+        event.image_url = image_url
+        db_session.commit()
+        return event
+    
+    @staticmethod
+    def delete_event(db_session, id):
+        event = db_session.query(Event).filter(Event.id == id).first()
+        db_session.delete(event)
+        db_session.commit()
+        return event
+    
     
 # Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
