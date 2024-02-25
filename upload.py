@@ -6,9 +6,10 @@ import base64
 from datetime import datetime, timedelta
 from mimetypes import guess_type
 from dotenv import load_dotenv
-import os
+import urllib.parse
 from Connections.token_and_keys import STORAGE_BUCKET
 load_dotenv()
+
 class FirebaseUpload:
     def __init__(self, file_path):
         self.file_path = file_path
@@ -35,6 +36,12 @@ class FirebaseUpload:
     def buffer_to_base64(self, buffer):
         return base64.b64encode(buffer).decode()
 
+    def get_firebase_storage_url(self, file_path):
+        """
+        Generate a Firebase Storage URL for a file.
+        """
+        bucket_name = os.getenv('STORAGE_BUCKET')
+        return f"https://firebasestorage.googleapis.com/v0/b/{bucket_name}/o/{urllib.parse.quote(file_path, safe='')}"
     def path(self, file_path):
         if not file_path:
             raise ValueError("No file path provided!")
@@ -43,6 +50,7 @@ class FirebaseUpload:
         is_production = os.getenv('NODE_ENV') == 'production'
         return f"prod/{file_path}" if is_production else f"dev/{file_path}"
     
+    ## Adding single file
     # def add(self, file, file_name):
     #     try:
     #         bucket = storage.bucket()
@@ -56,6 +64,29 @@ class FirebaseUpload:
     #     except Exception as err:
     #         print(f"Error occurred while uploading: {err}")
     #         raise
+
+    ##Adding multiple files
+    # def add(self, files, file_names):
+    #     try:
+    #         if len(files) != len(file_names):
+    #             raise ValueError("Number of files and file names must match")
+
+    #         bucket = storage.bucket()
+    #         results = []
+
+    #         for file, file_name in zip(files, file_names):
+    #             blob_path = self.path(self.file_path + file_name)
+    #             blob = bucket.blob(blob_path)
+    #             mime_type, _ = guess_type(file_name)
+    #             blob.upload_from_file(file, content_type=mime_type)
+    #             upload_url = blob.generate_signed_url(expiration=timedelta(hours=1), version="v4")
+    #             results.append({"file_name": file_name, "url": upload_url})
+
+    #         return results
+    #     except Exception as err:
+    #         print(f"Error occurred while uploading: {err}")
+    #         raise
+
     def add(self, files, file_names):
         try:
             if len(files) != len(file_names):
@@ -69,8 +100,10 @@ class FirebaseUpload:
                 blob = bucket.blob(blob_path)
                 mime_type, _ = guess_type(file_name)
                 blob.upload_from_file(file, content_type=mime_type)
-                upload_url = blob.generate_signed_url(expiration=timedelta(hours=1), version="v4")
-                results.append({"file_name": file_name, "url": upload_url})
+                
+                # Construct the Firebase Storage URL
+                firebase_url = self.get_firebase_storage_url(blob_path)
+                results.append({"file_name": file_name, "url": firebase_url})
 
             return results
         except Exception as err:
@@ -158,10 +191,17 @@ class FirebaseUpload:
 if __name__ == "__main__":
     file_paths = ["images/esp1.png", "images/gen.jpeg"]
     upload_path = "images/"  
-    file_names = ["esp60.png", "esp09.png"]
+    file_names = ["esp74.png", "esp73.png"]
 
     firebase_upload = FirebaseUpload(upload_path)
 
-    with open(file_paths[0], "rb") as file1, open(file_paths[1], "rb") as file2:
-        result = firebase_upload.add([file1, file2], file_names)
-        print(result)
+    # with open(file_paths[0], "rb") as file1, open(file_paths[1], "rb") as file2:
+    #     result = firebase_upload.add([file1, file2], file_names)
+    #     print(result)
+    files_to_upload = [open(file_path, "rb") for file_path in file_paths]
+    result = firebase_upload.add(files_to_upload, file_names)
+    print(result)
+
+    # Close the file handles
+    for file in files_to_upload:
+        file.close()
