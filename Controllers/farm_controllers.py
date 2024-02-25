@@ -34,9 +34,9 @@ def create_farm(db: Session, new_farm: dict, files: List[UploadFile]):
     files_to_upload = [('files', (file.filename, file.file.read(), file.content_type)) for file in files]
     upload_url = 'https://ettaka-lyo-backend.onrender.com/uploadImages'
     response = requests.post(upload_url, files=files_to_upload)
-    # image uploads
+   
     if response.status_code == 200:
-        upload_results = response.json()  # Assuming this endpoint returns a list of URLs
+        upload_results = response.json() 
 
         for image_url in upload_results:
             new_farm_image = FarmImage(farm_id=farm.id, image_url=image_url, added_at=datetime.utcnow())
