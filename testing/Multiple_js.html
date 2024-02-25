@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple File Upload</title>
+</head>
+<body>
+    <h2>Upload Multiple Files</h2>
+    <form id="fileUploadForm" enctype="multipart/form-data">
+        <input type="file" id="files" name="files" multiple>
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="uploadResults"></div>
+
+    <script>
+        document.getElementById('fileUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const files = document.getElementById('files').files;
+            const formData = new FormData();
+
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            try {
+                const response = await fetch('http://127.0.0.1:5000/uploadImages', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) throw new Error('Upload failed');
+
+                const result = await response.json();
+                
+                console.log(result);
+                console.log(result.data);
+
+                const uploadResults = Array.isArray(result) ? result : result.data ? result.data : [];
+
+                const resultsContainer = document.getElementById('uploadResults');
+                resultsContainer.innerHTML = '<h3>Uploaded Files:</h3>';
+
+                if (Array.isArray(uploadResults)) {
+                    uploadResults.forEach(file => {
+                        const content = `<p><a href="${file.url}" target="_blank">${file.url}</a></p>`;
+                        resultsContainer.innerHTML += content;
+                    });
+                } else {
+                    console.error('Unexpected response structure:', uploadResults);
+                    resultsContainer.innerHTML += '<p>Error: Unexpected response structure.</p>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('uploadResults').innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

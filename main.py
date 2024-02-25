@@ -37,7 +37,6 @@ async def upload_image(files: List[UploadFile] = File(...)):
     try:
         file_objects = [io.BytesIO(await file.read()) for file in files]
         file_names = [file.filename for file in files]
-        
         result = file_upload.add(file_objects, file_names)
         return {"message": "Files uploaded successfully", "result": result}
     except Exception as e:

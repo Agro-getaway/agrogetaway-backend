@@ -37,11 +37,9 @@ class FirebaseUpload:
         return base64.b64encode(buffer).decode()
 
     def get_firebase_storage_url(self, file_path):
-        """
-        Generate a Firebase Storage URL for a file.
-        """
         bucket_name = os.getenv('STORAGE_BUCKET')
         return f"https://firebasestorage.googleapis.com/v0/b/{bucket_name}/o/{urllib.parse.quote(file_path, safe='')}"
+    
     def path(self, file_path):
         if not file_path:
             raise ValueError("No file path provided!")
@@ -101,7 +99,6 @@ class FirebaseUpload:
                 mime_type, _ = guess_type(file_name)
                 blob.upload_from_file(file, content_type=mime_type)
                 
-                # Construct the Firebase Storage URL
                 firebase_url = self.get_firebase_storage_url(blob_path)
                 results.append({"file_name": file_name, "url": firebase_url})
 
@@ -128,7 +125,6 @@ class FirebaseUpload:
         except Exception as err:
             print("Error occurred while updating:", err)
             raise
-
 
     def delete(self, file_path):
         try:
@@ -202,6 +198,5 @@ if __name__ == "__main__":
     result = firebase_upload.add(files_to_upload, file_names)
     print(result)
 
-    # Close the file handles
     for file in files_to_upload:
         file.close()

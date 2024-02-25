@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from hashing import Harsher
 from upload import FirebaseUpload
 import secrets
+import requests
 import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
@@ -30,27 +31,28 @@ def create_farm(db: Session, new_farm: dict, files: List[UploadFile]):
     db.commit()
     db.refresh(farm)
     
-    file_upload = FirebaseUpload("farms/")
-    
+    files_to_upload = [('files', (file.filename, file.file.read(), file.content_type)) for file in files]
+    upload_url = 'https://ettaka-lyo-backend.onrender.com/uploadImages'
+    response = requests.post(upload_url, files=files_to_upload)
     # image uploads
-    file_objects = [file.file for file in files]
-    file_names = [file.filename for file in files]
-    upload_results = file_upload.add(file_objects, file_names)
+    if response.status_code == 200:
+        upload_results = response.json()  # Assuming this endpoint returns a list of URLs
 
-    for result in upload_results:
-        image_url = result['url'] 
-        new_farm_image = FarmImage(farm_id=farm.id, image_url=image_url, added_at=datetime.utcnow())
-        db.add(new_farm_image)
+        for image_url in upload_results:
+            new_farm_image = FarmImage(farm_id=farm.id, image_url=image_url, added_at=datetime.utcnow())
+            db.add(new_farm_image)
         
-    db.commit()
-    try:
-        if upload_results:
-            first_image_url = upload_results[0]['url']
-            farm.Image_url = first_image_url
-            db.commit()
-    except Exception as e:
-        print(f"Error updating farm image URL: {e}")
-        db.rollback()
+        db.commit()
+        # try:
+        #     if upload_results:
+        #         first_image_url = upload_results[0]['url']
+        #         # farm.Image_url = first_image_url
+        #         db.commit()
+        # except Exception as e:
+        #     print(f"Error updating farm image URL: {e}")
+        #     db.rollback()
+    else:
+        print(f"Failed to upload images")
     
     farmer = ModelFarmers.get_model_farmer_by_id(db, new_farm['farmer_id'])
     full_name = f"{farmer.firstname} {farmer.lastname}"

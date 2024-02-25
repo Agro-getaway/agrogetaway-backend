@@ -1,13 +1,14 @@
-from dotenv import load_dotenv
+from google.cloud import storage
 import os
 
-# Load environment variables from .env file
-load_dotenv()
+def getClient():
+    # Explicitly use service account credentials by specifying the private key file.
+    service_account_path = 'ServiceAccount.json'
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_path
+    return storage.Client()
 
-# Access variables
-storage_url = os.getenv('STORAGE_BUCKET')
-api_key = os.getenv('NODE_ENV')
-time  = os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')
+# Now, when you call getClient in your main code, it should not raise the DefaultCredentialsError.
+if __name__ == "__main__":
+    client = getClient()
+    print(client)
 
-# Use the variables, for example, to configure a database connection
-print(int(time))
