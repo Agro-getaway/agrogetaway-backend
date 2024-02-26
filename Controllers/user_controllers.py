@@ -44,6 +44,7 @@ def create_user(new_user: dict):
 
     existing_user = Farmers.get_user_by_email_or_phone(session, email, phonenumber)
     if existing_user:
+        session.rollback()
         raise Exception("A user with this email or phone number already exists.")
 
     user = Farmers.create_user(new_user['firstname'], new_user['lastname'], email, new_user['role'], phonenumber, new_user['password'])
@@ -200,6 +201,7 @@ async def authenticate_user(credentials):
         }
         return {"data:": admin_data,"access_token": access_token, "token_type": "bearer"}
     else:
+        session.rollback()
         raise Exception("Invalid Username or Password")
     
 def send_password_reset(user_email):
