@@ -1,10 +1,11 @@
 fastapi 
+bcrypt==4.0.1
 uvicorn
 alembic
 sqlalchemy
 psycopg2-binary
 httpx
-passlib[bcrypt]
+passlib[bcrypt==4.0.1]
 python-jose
 secure-smtplib==0.1.1
 twilio
