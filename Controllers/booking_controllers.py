@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from Models.models import Booking, Farms
 from Connections.connections import session
+from sqlalchemy.orm import Session
 from Controllers.tourist_controllers import get_tourist_by_id
 from Controllers.user_controllers import get_user_by_id
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -22,7 +23,7 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
 
-def create_booking_controller(new_booking: dict):
+def create_booking_controller(db:Session,new_booking: dict):
     booking = Booking.create_booking(
         new_booking["farm_id"],
         new_booking["tourist_id"],
@@ -33,15 +34,15 @@ def create_booking_controller(new_booking: dict):
         new_booking["payment_amount"],
     )
     try:
-        session.add(booking)
-        session.commit()
-        session.refresh(booking)
+        db.add(booking)
+        db.commit()
+        db.refresh(booking)
         send_booking_email(new_booking)
         return {"message": "Booking created successfully", "status": 200}
 
     except Exception as e:
         print(f"Error occured: {e}")
-        session.rollback()
+        db.rollback()
         return {"message": "An error occured", "status": 500}
 
 
@@ -126,60 +127,60 @@ def reject_booking_controller(booking_dict):
 
 
 # getting appoinments for a specific farmer
-def get_booking_for_farmer(farmer_id):
+def get_booking_for_farmer(db:Session,farmer_id):
     try:
         farms = (
-            session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
+            db.query(Farms).filter(Farms.farmer_id == farmer_id).all()
         )
         if not farms:
-            session.rollback()
+            db.rollback()
             raise HTTPException(status_code=404, detail="Farmer has no farms")
 
         farm_ids = [farm.id for farm in farms]
-        bookings = Booking.get_bookings_for_farm(session, farm_ids)
+        bookings = Booking.get_bookings_for_farm(db, farm_ids)
         return bookings
     except Exception as e:
-        session.rollback()
+        db.rollback()
         print(f"Error while fetching appointments for farmer {farmer_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
     ## getting booking by status
 
 
-def get_booking_for_farmer_by_status(farmer_id, status):
+def get_booking_for_farmer_by_status(db:Session,farmer_id, status):
     try:
         farms = (
-            session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
+            db.query(Farms).filter(Farms.farmer_id == farmer_id).all()
         )
         if not farms:
-            session.rollback()
+            db.rollback()
             raise HTTPException(status_code=404, detail="Farmer has no farms")
 
         farm_ids = [farm.id for farm in farms]
         pending_bookings = (
-            session.query(Booking)
+            db.query(Booking)
             .filter(Booking.Farmid.in_(farm_ids), Booking.status == status)
             .all()
         )
         return pending_bookings
     except Exception as e:
-        session.rollback()
+        db.rollback()
         print(f"Error while fetching pending appointments for farmer {farmer_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-def accept_booking_controller(booking_id: int):
+def accept_booking_controller(db:Session,booking_id: int):
     try:
-        booking = session.query(Booking).filter(Booking.id == booking_id).first()
+        booking = db.query(Booking).filter(Booking.id == booking_id).first()
         if not booking:
             return {"message": "Booking not found", "status": 404}
 
         booking.status = "Accepted"
-        session.commit()
+        db.commit()
 
         return {"message": "Booking accepted successfully", "status": 200}
     except Exception as e:
-        session.rollback()
+        db.rollback()
         print(f"Error accepting booking: {e}")
         return {"message": "An error occurred", "status": 500}
 

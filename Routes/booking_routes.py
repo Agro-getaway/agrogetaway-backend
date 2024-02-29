@@ -1,9 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from Models.models import Booking
+from sqlalchemy.orm import Session
+from Connections.connections import SessionLocal
 from Connections.connections import session
-import secrets
-import random
-import smtplib
 
 from Controllers.booking_controllers import(
     create_booking_controller,
@@ -14,40 +13,46 @@ from Controllers.booking_controllers import(
 
 router = APIRouter()
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @router.get("/")
 async def read_root():
     return {"Booking" : "Hello World"}
 
 @router.post("/create_booking")
-async def create_booking_route(new_booking: dict):
+async def create_booking_route(new_booking: dict,db: Session = Depends(get_db)):
     try:
-        booking = create_booking_controller(new_booking)
+        booking = create_booking_controller(db,new_booking)
         return booking
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
     
 @router.get("/farmer_bookings/")  
-async def get_bookings_for_farmer(farmer_id: int):
+async def get_bookings_for_farmer(farmer_id: int, db: Session = Depends(get_db)):
     try:
-        bookings = get_booking_for_farmer(farmer_id)
+        bookings = get_booking_for_farmer(db,farmer_id)
         return bookings
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
     
 # geting all pending bookings 
 @router.get("/pending_bookings/")
-async def get_pending_bookings(farmer_id: int):
+async def get_pending_bookings(farmer_id: int, db: Session = Depends(get_db)):
     status = "requesting"
     try:
-        bookings = get_booking_for_farmer_by_status(farmer_id, status)
+        bookings = get_booking_for_farmer_by_status(db,farmer_id, status)
         return bookings
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
     
 @router.post("/accept/{booking_id}")
-async def accept_booking(booking_id: int):
-    result = accept_booking_controller(booking_id)
+async def accept_booking(booking_id: int, db: Session = Depends(get_db)):
+    result = accept_booking_controller(db,booking_id)
     if result["status"] != 200:
         raise HTTPException(status_code=result["status"], detail=result["message"])
     return result
