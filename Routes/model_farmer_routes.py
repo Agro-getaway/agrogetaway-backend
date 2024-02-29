@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 import asyncio
+from sqlalchemy.orm import Session
 from  Connections.connections import session
 from Models.models import AdminSignUpToken
+from Connections.connections import SessionLocal
 from Controllers.model_farmers_controllers import (
     create_user, 
     send_password_reset,
@@ -10,6 +12,13 @@ from Controllers.model_farmers_controllers import (
 from Controllers.admin_controllers import generate_signup_token
 
 router = APIRouter()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @router.get("/")
 async def read_root():
@@ -28,7 +37,7 @@ async def generate_signup_token_for_admin(emailbody: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/model_farmer")
-async def create_model_farmer_route(new_model_farmer: dict):
+async def create_model_farmer_route(new_model_farmer: dict,db: Session = Depends(get_db)):
     email = new_model_farmer["email"]
     signup_token = new_model_farmer["token"]
     try:
@@ -39,7 +48,7 @@ async def create_model_farmer_route(new_model_farmer: dict):
         return {"message": str(e), "status": 400} 
     try:
         
-        user = create_user(new_model_farmer)
+        user = create_user(db,new_model_farmer)
         return user 
     
     except Exception as e:
@@ -48,20 +57,20 @@ async def create_model_farmer_route(new_model_farmer: dict):
 
         
 @router.post("/request_password_reset")
-async def request_password_reset(credentials: dict):
+async def request_password_reset(credentials: dict,db: Session = Depends(get_db)):
     user_email = credentials["email"]
     try:
-        send_password_reset(user_email)
+        send_password_reset(db,user_email)
         return {"message": "Reset link sent to your email address"}
     except Exception as e:
         raise HTTPException(status_code=400, detail="password reset link not sent")
     
 @router.post("/reset_password")
-async def reset_password_endpoint(token_and_password: dict):
+async def reset_password_endpoint(token_and_password: dict, db: Session = Depends(get_db)):
     token = token_and_password["token"]
     new_password = token_and_password["new_password"]
     try:
-        reset_user_password(token, new_password)
+        reset_user_password(db,token, new_password)
         return {"message": "Password reset successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

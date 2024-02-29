@@ -1,6 +1,7 @@
 from Models.models import ModelFarmers,Admin
 from fastapi import APIRouter, HTTPException
 from twilio.rest import Client
+from sqlalchemy.orm import Session
 from Connections.connections import session
 from Connections.token_and_keys import (
     SECRET_KEY,
@@ -25,20 +26,20 @@ from email.mime.image import MIMEImage
 client = Client(ACCOUNT_SID, AUTH_TOKEN)
 
 
-def create_user(new_user: dict):
+def create_user(db:Session,new_user: dict):
     email = new_user.get('email', None)
     phonenumber = new_user.get('phone_number', None)
 
     if not email and not phonenumber:
         raise ValueError("Either email or phone number must be provided.")
 
-    existing_user = ModelFarmers.get_model_farmer_by_email_or_phone(session, email, phonenumber)
+    existing_user = ModelFarmers.get_model_farmer_by_email_or_phone(db, email, phonenumber)
     if existing_user:
         raise Exception("A user with this email or phone number already exists.")
  
     user = ModelFarmers.create_model_farmer(new_user['firstname'], new_user['lastname'], email, phonenumber, new_user['password'])
-    session.add(user)
-    session.commit()
+    db.add(user)
+    db.commit()
     # send_welcome_email(new_user)
     if email and phonenumber:
         send_welcome_email(new_user) 
@@ -132,8 +133,8 @@ def send_sms(phone_number):
         print(f"Error sending message to {phone_number}: {str(e)}")
         raise Exception(f"Error sending message to {phone_number}: {str(e)}")
 
-def send_password_reset(user_email):
-    user = ModelFarmers.get_model_farmer_by_email_or_phone(session, user_email, None)
+def send_password_reset(db: Session,user_email):
+    user = ModelFarmers.get_model_farmer_by_email_or_phone(db, user_email, None)
     if not user:
         raise Exception("User not found")
 
@@ -179,7 +180,7 @@ def send_reset_email(email, reset_link):
     server.send_message(msg)
     server.quit()
 
-def reset_user_password(token, new_password):
+def reset_user_password(db: Session,token, new_password):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
@@ -188,17 +189,17 @@ def reset_user_password(token, new_password):
     except JWTError:
         raise Exception("Invalid token")
 
-    user = ModelFarmers.get_model_farmer_by_email_or_phone(session, email, None)
+    user = ModelFarmers.get_model_farmer_by_email_or_phone(db, email, None)
     if not user:
         raise Exception("User not found")
 
     user.update_password(new_password)
     try: 
-        session.commit()
+        db.commit()
         print("Password updated and committed")  
     except Exception as e:
         print(f"Error in commit: {e}")
-        session.rollback()
+        db.rollback()
         raise
 
     return True
