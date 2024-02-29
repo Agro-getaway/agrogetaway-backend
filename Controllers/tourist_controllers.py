@@ -60,7 +60,6 @@ def create_welcome_email(tourist_data):
     server.sendmail(sender_email, tourist_data['email'], msg.as_string())
     server.quit()
    
-
 def get_all_tourists(db:Session):
     tourists = Tourist.get_all_tourist_data(db)
     return tourists
