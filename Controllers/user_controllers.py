@@ -1,6 +1,7 @@
-from Models.models import Farmers,Admin,ModelFarmers
+from Models.models import Farmers,Admin,ModelFarmers,Agents
 from fastapi import APIRouter, HTTPException
 from twilio.rest import Client
+from sqlalchemy.orm import Session
 from Connections.connections import session
 from Connections.token_and_keys import (
     SECRET_KEY,
@@ -35,21 +36,21 @@ client = Client(ACCOUNT_SID, AUTH_TOKEN)
 #     session.commit()
 #     return {"message":"User created successfully","status":200}
 
-def create_user(new_user: dict):
+def create_user(db: Session,new_user: dict):
     email = new_user.get('email', None)
     phonenumber = new_user.get('phonenumber', None)
 
     if not email and not phonenumber:
         raise ValueError("Either email or phone number must be provided.")
 
-    existing_user = Farmers.get_user_by_email_or_phone(session, email, phonenumber)
+    existing_user = Farmers.get_user_by_email_or_phone(db, email, phonenumber)
     if existing_user:
-        session.rollback()
+        db.rollback()
         raise Exception("A user with this email or phone number already exists.")
 
     user = Farmers.create_user(new_user['firstname'], new_user['lastname'], email, new_user['role'], phonenumber, new_user['password'])
-    session.add(user)
-    session.commit()
+    db.add(user)
+    db.commit()
     # send_welcome_email(new_user)
     if email and phonenumber:
         send_welcome_email(new_user) 
@@ -86,7 +87,7 @@ def send_welcome_email(user_details):
   
     user_name = user_details["firstname"]# if hasattr(user_details, 'firstname') else user_details.FirstName
 
-    # Make access number flexible for accessnumber, access_no, Accessnumber, AccessNumber
+    # Making access number flexible for accessnumber, access_no, Accessnumber, AccessNumber
     # access_no = user_details.access_no if hasattr(user_details, 'access_no') else user_details.accessnumber if hasattr(user_details, 'accessnumber') else user_details.AccessNumber if hasattr(user_details, 'AccessNumber') else user_details.Accessnumber
 
     html_body = f"""
@@ -143,69 +144,39 @@ def send_sms(phone_number):
         print(f"Error sending message to {phone_number}: {str(e)}")
         raise Exception(f"Error sending message to {phone_number}: {str(e)}")
 
-async def authenticate_user(credentials):
+async def authenticate_user(db: Session,credentials):
     email_or_phone = credentials['email']
     input_password = credentials['password']
-
-    farmer = Farmers.get_user(session, email_or_phone)
-    print(farmer.password)
-    if farmer and Harsher.verify_password(input_password, farmer.password):
-        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
-
-        access_token = create_access_token(
-            data={"sub": farmer .email},
-            expires_delta=access_token_expires
-        ) 
-        farmer_data = {
-            "id": farmer.id,
-            "email": farmer.email,
-            "firstname": farmer.firstname,
-            "lastname": farmer.lastname,
-            "role": farmer.role
-        }
-        return {"data:": farmer_data,"access_token": access_token, "token_type": "bearer"}
     
-    modelfarmer = ModelFarmers.get_model_farmer(session, email_or_phone)
-
-    if modelfarmer and Harsher.verify_password(input_password, modelfarmer.password):
-        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
-
-        access_token = create_access_token(
-            data={"sub": modelfarmer.email},
-            expires_delta=access_token_expires
-        ) 
-        modelfarmer_data = {
-            "id": modelfarmer.id,
-            "email": modelfarmer.email,
-            "firstname": modelfarmer.firstname,
-            "lastname": modelfarmer.lastname,
-            "role": modelfarmer.role
-        }
-        return {"data:": modelfarmer_data,"access_token": access_token, "token_type": "bearer"}
-
-    admin  = Admin.get_admin(session, email_or_phone)
-
-    if admin  and Harsher.verify_password(input_password, admin.password):
-        access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
-
-        access_token = create_access_token(
-            data={"sub": admin.email},
-            expires_delta=access_token_expires
-        ) 
-        admin_data = {
-            "id": admin.id,
-            "email": admin.email,
-            "firstname": admin.firstname,
-            "lastname": admin.lastname,
-            "role": admin.role
-        }
-        return {"data:": admin_data,"access_token": access_token, "token_type": "bearer"}
-    else:
-        session.rollback()
-        raise Exception("Invalid Username or Password")
+    authentication_functions = [
+        (Agents.get_agent, "Agent"),
+        (Farmers.get_user, "Farmer"),
+        (ModelFarmers.get_model_farmer, "ModelFarmer"),
+        (Admin.get_admin, "Admin")
+    ]
     
-def send_password_reset(user_email):
-    user = Farmers.get_user_by_email_or_phone(session, user_email, None)
+    for get_user_function, user_type in authentication_functions:
+        user = get_user_function(db, email_or_phone)
+        if user and Harsher.verify_password(input_password, user.password):
+            access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
+            access_token = create_access_token(
+                data={"sub": user.email}, 
+                expires_delta=access_token_expires
+            )
+            user_data = {
+                "id": user.id,
+                "email": user.email,
+                "firstname": getattr(user, 'Firstname', None) or getattr(user, 'firstname', None),
+                "lastname": getattr(user, 'Lastname', None) or getattr(user, 'lastname', None),
+                "role": user.role
+            }
+            return {"data": user_data, "access_token": access_token, "token_type": "bearer"}
+
+    db.rollback()
+    raise Exception("Invalid Username or Password")
+    
+def send_password_reset(db: Session,user_email):
+    user = Farmers.get_user_by_email_or_phone(db, user_email, None)
     if not user:
         raise Exception("User not found")
 
@@ -251,7 +222,7 @@ def send_reset_email(email, reset_link):
     server.send_message(msg)
     server.quit()
 
-def reset_user_password(token, new_password):
+def reset_user_password(db: Session,token, new_password):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
@@ -260,23 +231,23 @@ def reset_user_password(token, new_password):
     except JWTError:
         raise Exception("Invalid token")
 
-    user = Farmers.get_user_by_email_or_phone(session, email, None)
+    user = Farmers.get_user_by_email_or_phone(db, email, None)
     if not user:
         raise Exception("User not found")
 
     user.update_password(new_password)
     try: 
-        session.commit()
+        db.commit()
         print("Password updated and committed")  
     except Exception as e:
         print(f"Error in commit: {e}")
-        session.rollback()
+        db.rollback()
         raise
 
     return True
 
-def get_user_by_id(id):
-    user = Farmers.get_user_by_id(session, id)
+def get_user_by_id(db: Session,id):
+    user = Farmers.get_user_by_id(db, id)
     if user:
         return user
     else:

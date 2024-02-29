@@ -428,22 +428,23 @@ class Agents(Base):
     __tablename__ = 'agents'
 
     id = Column(Integer, primary_key=True, index=True)
-    Firstname = Column(String)
-    Lastname = Column(String)
-    Email = Column(String)
-    Phonenumber = Column(String)
-    Password = Column(String)
-    status  = Column(String)
+    firstname = Column(String)
+    lastname = Column(String)
+    email = Column(String)
+    phone_number = Column(String)
+    password = Column(String)
+    status = Column(String)
+    role = Column(String, default="agent")
 
     @staticmethod
     def create_agent(Firstname, Lastname, Email,Phonenumber,Password,status):
         print("""Creating agent""")
-        agent = Agents(Firstname=Firstname, Lastname = Lastname, Email = Email, Phonenumber=Phonenumber, Password=Password, status=status)
+        agent = Agents(firstname=Firstname, lastname = Lastname, email = Email, phone_number=Phonenumber, password=Password, status=status)
         return agent
     
     @staticmethod
-    def get_agent_data(db_session, id):
-        return db_session.query(Agents).filter(Agents.id == id).first()
+    def get_agent(db_session, email_or_phone):
+        return db_session.query(Agents).filter((Agents.email == email_or_phone) | (Agents.phone_number == email_or_phone)).first()
     
     @staticmethod
     def get_agent_data_by_id(db_session, id):
@@ -456,9 +457,9 @@ class Agents(Base):
     @staticmethod
     def update_agent_data(db_session,data):
         agent_data = db_session.query(Agents).filter(Agents.id == data["id"]).first()
-        agent_data.Name = data["Name"]
-        agent_data.Email = data["Email"]
-        agent_data.Phonenumber = data["Phonenumber"]
+        agent_data.first_name = data["Name"]
+        agent_data.email = data["Email"]
+        agent_data.phone_number = data["Phonenumber"]
         db_session.commit()
         return {"message": "Agent updated successfully", "status": 200}
     

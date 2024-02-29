@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 import asyncio
-# from Models.models import UsernameChangeRequest
+from sqlalchemy.orm import Session
+from Connections.connections import SessionLocal
 from Controllers.user_controllers import (
     create_user, 
     authenticate_user,
@@ -10,6 +11,13 @@ from Controllers.user_controllers import (
 from Controllers.admin_controllers import admin_login
 
 router = APIRouter()
+router = APIRouter()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @router.get("/")
 async def read_root():
@@ -24,22 +32,22 @@ async def read_root():
 #         HTTPException(status_code=400, detail=str(e))
 
 @router.post("/create_user")
-async def create_user_route(new_user: dict):
+async def create_user_route(new_user: dict, db: Session = Depends(get_db)):
     try:
-        user = create_user(new_user)
+        user = create_user(db,new_user)
         return user
     except Exception as e:
         return HTTPException(status_code=400, detail="failed to create user.")
 
 @router.post("/login")
-async def login_user_endpoint(user: dict):
+async def login_user_endpoint(user: dict, db: Session = Depends(get_db)):
     email = user.get("email", "")
     password = user.get("password", "")
 
     if not email or not password:
         raise HTTPException(status_code=400, detail="Email and password are required.")
     try:
-        return await authenticate_user(user)  
+        return await authenticate_user(db,user)  
     except HTTPException as http_exc:
         raise http_exc
     except Exception as e:
@@ -49,20 +57,20 @@ async def login_user_endpoint(user: dict):
         # return {"message": "Reset link sent to your email address"}
         
 @router.post("/request_password_reset")
-async def request_password_reset(credentials: dict):
+async def request_password_reset(credentials: dict, db: Session = Depends(get_db)):
     user_email = credentials["email"]
     try:
-        send_password_reset(user_email)
+        send_password_reset(db,user_email)
         return {"message": "Reset link sent to your email address"}
     except Exception as e:
         raise HTTPException(status_code=400, detail="password reset link not sent")
     
 @router.post("/reset_password")
-async def reset_password_endpoint(token_and_password: dict):
+async def reset_password_endpoint(token_and_password: dict, db: Session = Depends(get_db)):
     token = token_and_password["token"]
     new_password = token_and_password["new_password"]
     try:
-        reset_user_password(token, new_password)
+        reset_user_password(db,token, new_password)
         return {"message": "Password reset successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

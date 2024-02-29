@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException
-import asyncio
+from fastapi import APIRouter, HTTPException, Depends
+from Connections.connections import SessionLocal
+from sqlalchemy.orm import Session
 from Models.models import UsernameChangeRequest
 from Controllers.admin_controllers import (
     create_admin_controller,
@@ -10,6 +11,13 @@ from Controllers.admin_controllers import (
     # approve_farm
 )
 router = APIRouter()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @router.get("/")
 async def read_root():
@@ -29,9 +37,9 @@ async def generate_signup_token_for_admin(emailbody: dict):
 
 
 @router.post("/create_admin")
-async def create_admin_route(new_admin: dict):
+async def create_admin_route(new_admin: dict,db: Session = Depends(get_db)):
     try:
-        admin = await create_admin_controller(new_admin)
+        admin = await create_admin_controller(db, new_admin)
         return admin
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
@@ -45,20 +53,20 @@ async def create_admin_route(new_admin: dict):
 #         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/request_password_reset")
-async def request_password_reset(credentials: dict):
+async def request_password_reset(credentials: dict,db: Session = Depends(get_db)):
     employee_access = credentials["employee_access"]
     try:
-        send_password_reset(employee_access)
+        send_password_reset(db,employee_access)
         return {"message": "Reset link sent to your email address"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
 @router.post("/reset_password")
-async def reset_password_endpoint(token_and_password: dict):
+async def reset_password_endpoint(token_and_password: dict,db: Session = Depends(get_db)):
     token = token_and_password["token"]
     new_password = token_and_password["new_password"]
     try:
-        reset_user_password(token, new_password)
+        reset_user_password(db,token, new_password)
         return {"message": "Password reset successfully"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

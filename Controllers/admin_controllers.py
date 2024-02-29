@@ -1,6 +1,7 @@
 from Models.models import Admin, UsernameChangeRequest, AdminSignUpToken
 from fastapi import APIRouter, HTTPException
 from Connections.connections import session
+from sqlalchemy.orm import Session
 import secrets
 import random
 import smtplib
@@ -91,24 +92,25 @@ def send_signup_token_email(email, token, role):
     server.send_message(msg)
     server.quit()
        
-async def create_admin_controller(new_admin: dict):
+async def create_admin_controller(db: Session,new_admin: dict):
     email = new_admin["email"]
     signup_token = new_admin["token"]
 
     try:
-        if not AdminSignUpToken.validate_token(session, email, signup_token):
+        if not AdminSignUpToken.validate_token(db, email, signup_token):
             raise Exception("Invalid token")
     except Exception as e:
         print(f"Error occurred during token validation: {e}")
         return {"message": str(e), "status": 400}  
 
     try:
-        Admin.create_admin(session, new_admin["firstname"], new_admin["lastname"], email, new_admin["phone_number"], new_admin["password"])
+        Admin.create_admin(db, new_admin["firstname"], new_admin["lastname"], email, new_admin["phone_number"], new_admin["password"])
         print("Token status updated")
         send_welcome_email(new_admin)
         return {"message": "Admin created successfully", "status": 200}
+    
     except Exception as e:
-        session.rollback()
+        db.rollback()
         print(f"Error occurred during admin creation: {e}")
 
         return {"message": str(e), "status": 400}  
@@ -217,11 +219,11 @@ def reset_admin_password(token, new_password):
 #         session.rollback()
 #         raise
 
-def send_password_reset(email):
-    user = session.query(Admin).filter(Admin.email == email).first()
+def send_password_reset(db: Session,email):
+    user = db.query(Admin).filter(Admin.email == email).first()
 
     if not user:
-        session.rollback()
+        db.rollback()
         raise Exception("User not found")
 
     reset_token = create_access_token(data={"sub": email}, expires_delta=timedelta(hours=1))
@@ -259,7 +261,7 @@ def send_reset_email(email: str, reset_link: str):
     server.send_message(msg)
     server.quit()
 
-def reset_user_password(token, new_password):
+def reset_user_password(db: Session,token, new_password):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         employee_access = payload.get("sub")
@@ -268,18 +270,18 @@ def reset_user_password(token, new_password):
     except JWTError:
         raise Exception("Invalid token")
 
-    admin = session.query(Admin).filter(Admin.employee_access == employee_access).first()
+    admin = db.query(Admin).filter(Admin.employee_access == employee_access).first()
     if not admin:
-        session.rollback()
+        db.rollback()
         raise Exception("Admin not found")
 
     admin.update_password(new_password)
     try:
-        session.commit()
+        db.commit()
         print("Password updated and committed")  
     except Exception as e:
         print(f"Error in commit: {e}")
-        session.rollback()
+        db.rollback()
         raise
 
     return True

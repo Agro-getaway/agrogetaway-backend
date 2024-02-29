@@ -1,6 +1,7 @@
 from Models.models import Agents,AdminSignUpToken
 from fastapi import APIRouter, HTTPException
 from Connections.connections import session
+from sqlalchemy.orm import Session
 from hashing import Harsher
 import smtplib
 from datetime import datetime, timedelta
@@ -22,31 +23,19 @@ from Connections.token_and_keys import (
     TWILIO_PHONE_NUMBER
 )
 
-async def create_agent_controller(new_agent: dict):
+async def create_agent_controller(db: Session, new_agent: dict):
     email = new_agent["email"]
-    signup_token = new_agent["token"]
-
+    hashed_password = Harsher.get_hash_password(new_agent["password"])
     try:
-        if not AdminSignUpToken.validate_token(session, email, signup_token):
-            raise Exception("Invalid token")
-        
+        agent = Agents.create_agent(new_agent["firstname"], new_agent["lastname"], email, new_agent["phone_number"], hashed_password, status="requesting")
+        db.add(agent)
+        db.commit()
+        db.refresh(agent)
+        send_welcome_email(new_agent)  
+        return {"message": "Agent created successfully", "status": 200, "agent_id": agent.id}
     except Exception as e:
-        print(f"Error occurred during token validation: {e}")
-        return {"message": str(e), "status": 400}  
-
-    try:
-        Agents.create_agent(new_agent["firstname"], new_agent["lastname"], email, new_agent["phone_number"], new_agent["password"], status="requesting")
-        print("Token status updated")
-        send_welcome_email(new_agent)
-        return {"message": "Admin created successfully", "status": 200}
-    except Exception as e:
-        print(f"Error occurred during admin creation: {e}")
-
-        return {"message": str(e), "status": 400}  
-
-# async def create_password(length=4):
-#     password = f"Changemenow@{random.randint(0, 9999):04d}"
-#     return password
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 def send_welcome_email(user_details):
     sender_email = EMAIL
@@ -101,4 +90,10 @@ def send_welcome_email(user_details):
 
     server.send_message(msg)
     server.quit()
+
+def get_agent(db: Session, email):
+    agent = db.query(Agents).filter(Agents.email == email).first()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return agent
 
