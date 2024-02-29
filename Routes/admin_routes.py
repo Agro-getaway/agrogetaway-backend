@@ -54,9 +54,9 @@ async def create_admin_route(new_admin: dict,db: Session = Depends(get_db)):
 
 @router.post("/request_password_reset")
 async def request_password_reset(credentials: dict,db: Session = Depends(get_db)):
-    employee_access = credentials["employee_access"]
+    email = credentials["email"]
     try:
-        send_password_reset(db,employee_access)
+        send_password_reset(db,email)
         return {"message": "Reset link sent to your email address"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

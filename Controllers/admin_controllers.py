@@ -176,13 +176,13 @@ def send_welcome_email(user_details):
 def reset_admin_password(token, new_password):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        employee_access = payload.get("sub")
-        if employee_access is None:
+        email = payload.get("sub")
+        if email is None:
             raise Exception("Invalid token")
     except JWTError:
         raise Exception("Invalid token")
 
-    admin = session.query(Admin).filter(Admin.employee_access == employee_access).first()
+    admin = session.query(Admin).filter(Admin.email == email).first()
     if not admin:
         session.rollback()
         raise Exception("Admin not found")
@@ -264,13 +264,13 @@ def send_reset_email(email: str, reset_link: str):
 def reset_user_password(db: Session,token, new_password):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        employee_access = payload.get("sub")
-        if employee_access is None:
+        email = payload.get("sub")
+        if email is None:
             raise Exception("Invalid token")
     except JWTError:
         raise Exception("Invalid token")
 
-    admin = db.query(Admin).filter(Admin.employee_access == employee_access).first()
+    admin = db.query(Admin).filter(Admin.email == email).first()
     if not admin:
         db.rollback()
         raise Exception("Admin not found")
@@ -287,22 +287,20 @@ def reset_user_password(db: Session,token, new_password):
     return True
 
 async def admin_login(credentials):
-    employee_access = credentials["email"]
+    email = credentials["email"]
     input_password = credentials["password"]
 
-    admin = Admin.get_admin(session, employee_access)
+    admin = Admin.get_admin(session, email)
     
     if admin and Harsher.verify_password(input_password, admin.password):
         access_token_expires = timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
         access_token = create_access_token(
-            data={"sub": admin.employee_access}, 
+            data={"sub": admin.email}, 
             expires_delta=access_token_expires
         )
         admin_data = {
             "id": admin.id,
             "name": admin.firstname,
-            "employee_access": admin.employee_access,
-            "email": admin.email,
             "role": "admin"
         }
         return {"data": admin_data,"access_token": access_token, "token_type": "bearer"}

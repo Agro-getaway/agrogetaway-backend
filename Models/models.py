@@ -146,7 +146,7 @@ class Admin(Base):
         if email:
             query = query.filter(Admin.email == email)
         if phone:
-            query = query.filter(Admin.employee_access == phone)
+            query = query.filter(Admin.phone == phone)
         return query.first()
     
 class AdminSignUpToken(Base):
