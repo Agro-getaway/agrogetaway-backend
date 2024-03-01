@@ -157,17 +157,20 @@ class AdminSignUpToken(Base):
     email = Column(String, nullable=False)
     time = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default="False")
+    added_by = Column(Integer, ForeignKey('admin.id'))
 
     @staticmethod
-    def create_token(db_session, email):
+    def create_token(db_session, email, admin_id):
+        print(f"Creating token for email {email} by admin {admin_id}")
         jti = str(random.randint(10000000, 99999999))
         existing_token = db_session.query(AdminSignUpToken).filter_by(email=email).first()
         if existing_token:
             existing_token.jti = jti
             existing_token.time = datetime.utcnow()
             existing_token.status = "False"
+            existing_token.added_by = admin_id
         else:
-            new_token_entry = AdminSignUpToken(jti=jti, email=email)
+            new_token_entry = AdminSignUpToken(jti=jti, email=email, added_by=admin_id)
             db_session.add(new_token_entry)
         
         try:
@@ -216,6 +219,10 @@ class AdminSignUpToken(Base):
             db_session.commit()
             return True
         return False
+    
+    @staticmethod
+    def get_token_by_admin(db_session, admin_id):
+        return db_session.query(AdminSignUpToken).filter(AdminSignUpToken.added_by == admin_id).all()
 
     @staticmethod
     def delete_token(db_session, jti):

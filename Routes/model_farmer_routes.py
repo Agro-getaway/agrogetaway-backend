@@ -27,8 +27,9 @@ async def read_root():
 @router.post("/generate_signup_token")
 async def generate_signup_token_for_admin(emailbody: dict):
     email = emailbody["email"]
+    admin_id = emailbody["admin_id"]
     try:
-        token = await generate_signup_token(email,"Model Farmer")
+        token = await generate_signup_token(email,admin_id,"ModelFarmer")
         if token:
             return {"email": email, "token": token}
         else:

@@ -26,9 +26,10 @@ from Connections.token_and_keys import (
 
 )
 
-async def generate_signup_token(email,role):
+async def generate_signup_token(email,adminid,role):
+    print(f"Email: {email}, AdminID: {adminid}, Role: {role}")
     try: 
-        token_info = AdminSignUpToken.create_token(session, email) 
+        token_info = AdminSignUpToken.create_token(session, email, adminid) 
         if token_info:
             token = token_info['token'] 
             send_signup_token_email(email, token, role) 
@@ -309,5 +310,13 @@ async def admin_login(credentials):
 # else:
 #     raise HTTPException(status_code=404, detail="Admin not found.")
     
-
-
+async def get_signup_token_added(db:Session,id:int):
+    try:
+        token = AdminSignUpToken.get_token_by_admin(db, id)
+        if token:
+            return token
+        else:
+            raise Exception("Token not found")
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return False

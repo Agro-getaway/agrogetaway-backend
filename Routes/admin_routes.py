@@ -8,7 +8,7 @@ from Controllers.admin_controllers import (
     send_password_reset,
     reset_user_password,
     generate_signup_token,
-    # approve_farm
+    get_signup_token_added
 )
 router = APIRouter()
 
@@ -26,8 +26,9 @@ async def read_root():
 @router.post("/generate_signup_token")
 async def generate_signup_token_for_admin(emailbody: dict):
     email = emailbody["email"]
+    admin_id = emailbody["admin_id"]
     try:
-        token = await generate_signup_token(email,"Admin")
+        token = await generate_signup_token(email,admin_id,"Admin")
         if token:
             return {"email": email, "token": token}
         else:
@@ -85,3 +86,11 @@ async def reset_password_endpoint(token_and_password: dict,db: Session = Depends
 #         return approve_farm(db, farm)
 #     except Exception as e:
 #         return HTTPException(status_code=400, detail=str(e))
+    
+@router.get("/signup_token/")
+async def get_signup_token_by_an_admin(id: int, db: Session = Depends(get_db)):  # Note the async here
+    try:
+        token = await get_signup_token_added(db, id)  # Correctly awaiting the function
+        return token
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
