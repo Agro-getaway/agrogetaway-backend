@@ -30,10 +30,11 @@ async def generate_signup_token(email,adminid,role):
     print(f"Email: {email}, AdminID: {adminid}, Role: {role}")
     try: 
         token_info = AdminSignUpToken.create_token(session, email, adminid) 
+        # print(f"token_info : {token_info}")
         if token_info:
             token = token_info['token'] 
             send_signup_token_email(email, token, role) 
-            return token 
+            return token_info 
         else:
 
             raise Exception("Token not created")

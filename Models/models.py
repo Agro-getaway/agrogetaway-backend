@@ -169,13 +169,23 @@ class AdminSignUpToken(Base):
             existing_token.time = datetime.utcnow()
             existing_token.status = "False"
             existing_token.added_by = admin_id
+            token_to_return = existing_token
         else:
             new_token_entry = AdminSignUpToken(jti=jti, email=email, added_by=admin_id)
             db_session.add(new_token_entry)
-        
+            db_session.flush()
+            token_to_return = new_token_entry
+
         try:
             db_session.commit()
-            return {"token": jti, "email": email}
+            return {
+                "id": token_to_return.id,
+                "token": token_to_return.jti,
+                "email": token_to_return.email,
+                "status": token_to_return.status,
+                "time_created": token_to_return.time,
+                "added_by": token_to_return.added_by
+            }
         except Exception as e:
             db_session.rollback()
             print(f"Error in token creation or update: {e}")
@@ -573,6 +583,7 @@ class CommunityFollowers(Base):
         db_session.delete(community_follower)
         db_session.commit()
         return community_follower
+    
 # class CommunityFollower(Base):
 #     __tablename__ = 'community_follower'
 
@@ -706,7 +717,6 @@ class Event(Base):
         db_session.delete(event)
         db_session.commit()
         return event
-    
     
 # Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
