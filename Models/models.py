@@ -183,7 +183,7 @@ class AdminSignUpToken(Base):
                 "token": token_to_return.jti,
                 "email": token_to_return.email,
                 "status": token_to_return.status,
-                "time_created": token_to_return.time,
+                "time": token_to_return.time,
                 "added_by": token_to_return.added_by
             }
         except Exception as e:

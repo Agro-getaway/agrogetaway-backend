@@ -11,7 +11,6 @@ from Controllers.agent_controllers import create_agent_controller, get_agent
 
 router = APIRouter()
 
-
 def get_db():
     db = SessionLocal()
     try:
@@ -19,21 +18,19 @@ def get_db():
     finally:
         db.close()
 
-
 @router.get("/")
 async def read_root():
     return {"Agents": "Hello World"}
 
-
 @router.post("/generate_signup_token")
-async def generate_signup_token_for_admin(emailbody: dict):
+async def generate_signup_token_for_agents(emailbody: dict):
     email = emailbody["email"]
     admin_id = emailbody["admin_id"]
     try:
         token_info = await generate_signup_token(email, admin_id, "Agent")
         if token_info:
             token = token_info['token'] 
-            send_signup_token_email(email, token, "agent") 
+            send_signup_token_email(email, token, "Agent") 
             return token_info
         else:
             raise HTTPException(status_code=400, detail="Unable to generate token")
@@ -58,7 +55,6 @@ async def create_agent_route(new_agent: dict, db: Session = Depends(get_db)):
         return admin
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))
-
 
 @router.get("/get_agent_by_email/")
 async def get_agent_by_email(email: str, db: Session = Depends(get_db)):

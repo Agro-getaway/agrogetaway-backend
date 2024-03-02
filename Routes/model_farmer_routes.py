@@ -9,7 +9,10 @@ from Controllers.model_farmers_controllers import (
     send_password_reset,
     reset_user_password
 )
-from Controllers.admin_controllers import generate_signup_token
+from Controllers.admin_controllers import (
+    generate_signup_token, 
+    send_signup_token_email
+    )
 
 router = APIRouter()
 
@@ -31,7 +34,10 @@ async def generate_signup_token_for_admin(emailbody: dict):
     try:
         token = await generate_signup_token(email,admin_id,"ModelFarmer")
         if token:
-            return {"email": email, "token": token}
+            modal_farmer_token = token["token"]
+            print(f"Token: {modal_farmer_token}")
+            send_signup_token_email(email, modal_farmer_token, "model_farmer")
+            return token
         else:
             raise HTTPException(status_code=400, detail="Unable to generate token")
     except Exception as e:

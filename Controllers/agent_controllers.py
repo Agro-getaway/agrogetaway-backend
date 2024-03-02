@@ -28,11 +28,23 @@ async def create_agent_controller(db: Session, new_agent: dict):
     hashed_password = Harsher.get_hash_password(new_agent["password"])
     try:
         agent = Agents.create_agent(new_agent["firstname"], new_agent["lastname"], email, new_agent["phone_number"], hashed_password, status="requesting")
+        # print(f"Agent: {agent}")
         db.add(agent)
         db.commit()
         db.refresh(agent)
         send_welcome_email(new_agent)  
-        return {"message": "Agent created successfully", "status": 200, "agent_id": agent.id}
+        # return {"message": "Agent created successfully", "status": 200, "agent_id": agent.id}
+        return {
+            "message": "Agent created successfully", 
+            "status": 200, 
+            "agent_id": agent.id,
+            "firstname": agent.firstname,
+            "lastname": agent.lastname,
+            "email": agent.email,
+            "phone_number": agent.phone_number,
+            "status": agent.status,
+            "role": agent.role
+        }
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

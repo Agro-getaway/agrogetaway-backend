@@ -60,7 +60,17 @@ def create_user(db: Session,new_user: dict):
     elif phonenumber:
         # send_sms(phonenumber)
         pass
-    return {"message": "User created successfully", "status": 200}
+    # return {"message": "User created successfully", "status": 200}
+    return {
+        "message": "User created successfully", 
+        "status": 200, 
+        "id": user.id,
+        "firstname": user.firstname,
+        "lastname": user.lastname,
+        "email": user.email,
+        "phonenumber": user.phonenumber,
+        "role": user.role
+    }
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()

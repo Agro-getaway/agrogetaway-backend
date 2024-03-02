@@ -23,14 +23,12 @@ from Connections.token_and_keys import (
     ACCOUNT_SID,
     AUTH_TOKEN,
     TWILIO_PHONE_NUMBER
-
 )
 
 async def generate_signup_token(email,adminid,role):
-    print(f"Email: {email}, AdminID: {adminid}, Role: {role}")
+    # print(f"Email: {email}, AdminID: {adminid}, Role: {role}")
     try: 
         token_info = AdminSignUpToken.create_token(session, email, adminid) 
-        # print(f"token_info : {token_info}")
         if token_info:
             token = token_info['token'] 
             send_signup_token_email(email, token, role) 
@@ -43,10 +41,18 @@ async def generate_signup_token(email,adminid,role):
         print(f"Error occurred: {e}")
         return False
 
-# an email to the user with the token
 def send_signup_token_email(email, token, role):
     sender_email = EMAIL
     sender_password = EMAIL_PASSWORD
+
+    base_url = "https://agrogetaway.vercel.app/signup"
+    role_paths = {
+        "Admin": "admin",
+        "Agent": "agent",
+        "ModelFarmer": "modelfarmer"
+    }
+    role_path = role_paths.get(role, "admin") 
+    signup_url = f"{base_url}/{role_path}?token={token}"
 
     msg = MIMEMultipart('related')
     msg['From'] = sender_email
@@ -57,10 +63,11 @@ def send_signup_token_email(email, token, role):
         <html>
 <body style="font-family: Arial, sans-serif; color: #333;">
     <p>Dear {role},</p>
-    <br /><br />
-    Welcome to AgroGetaway! Please use the following token to complete your signup process:
     <br />
-    <p><strong>{token}</strong></p>
+    Welcome to AgroGetaway! Please use the button below to complete your signup process:
+    <br /><br />
+    <a href="{signup_url}" style="background-color: #4CAF50; color: white; padding: 14px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">Complete Signup</a>
+    <br /><br />
     <p>If you have any questions or require assistance, our support team is always here to help.</p>
     <p>Thank you for stepping into this vital role within the AgroGetaway community. Together, we'll drive the future of farming.</p>
     <p>Warm regards,</p>
@@ -106,10 +113,20 @@ async def create_admin_controller(db: Session,new_admin: dict):
         return {"message": str(e), "status": 400}  
 
     try:
-        Admin.create_admin(db, new_admin["firstname"], new_admin["lastname"], email, new_admin["phone_number"], new_admin["password"])
+        admin = Admin.create_admin(db, new_admin["firstname"], new_admin["lastname"], email, new_admin["phone_number"], new_admin["password"])
         print("Token status updated")
         send_welcome_email(new_admin)
-        return {"message": "Admin created successfully", "status": 200}
+        # return {"message": "Admin created successfully", "status": 200}
+        return {
+            "message": "Admin created successfully",
+            "status": 200,
+            "admin_id" : admin.id,
+            "firstname": admin.firstname,
+            "lastname": admin.lastname,
+            "email": admin.email,
+            "phone_number": admin.phone_number,
+            "role": admin.role
+        }
     
     except Exception as e:
         db.rollback()
