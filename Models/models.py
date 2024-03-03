@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Boolean, Float, Integer, String, DateTime,ForeignKey,Enum as SQLAEnum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship,joinedload
+from sqlalchemy.orm import Session
 from enum import Enum
 from Connections.connections import Base,engine
 import jwt, random
@@ -63,6 +64,8 @@ class ModelFarmers(Base):
     role = Column(String)
     phonenumber = Column(String)
     password = Column(String)
+    # experience = Column(String)
+    # background = Column(String)
     farms = relationship("Farms", back_populates="modelfarmer")
 
     @staticmethod
@@ -264,6 +267,7 @@ class Farms(Base):
     # farmer = relationship("Farmers", back_populates="farms")
     bookings = relationship("Booking", back_populates="farms")
     modelfarmer = relationship("ModelFarmers", back_populates="farms")
+    images = relationship("FarmImage", back_populates="farms")
 
     @staticmethod
     def create_farm_data(farmer_id,Location, status, Name, Method, Services, farm_description, method_description):
@@ -315,12 +319,13 @@ class Farms(Base):
         return farm_data
     
     @staticmethod
-    def get_approved_farms(db_session):
-        return db_session.query(Farms).filter(Farms.status == "approved").all()
+    def get_approved_farms(db: Session):
+        # return db_session.query(Farms).filter(Farms.status == "approved").all()
+        return db.query(Farms).options(joinedload(Farms.images),joinedload(Farms.modelfarmer)).filter(Farms.status == "approved").all()
     
     @staticmethod
-    def get_pending_farms(db_session):
-        return db_session.query(Farms).filter(Farms.status == "requesting").all()
+    def get_pending_farms(db: Session):
+        return db.query(Farms).options(joinedload(Farms.images),joinedload(Farms.modelfarmer)).all()
     
     @staticmethod
     def get_pending_count(db_session):
@@ -341,6 +346,8 @@ class FarmImage(Base):
     farm_id = Column(Integer, ForeignKey('farms.id')) 
     image_url = Column(String, nullable=False)
     added_at = Column(DateTime, default=datetime.utcnow)
+
+    farms = relationship("Farms", back_populates="images")
 
 class Tourist(Base):
     __tablename__ = 'tourists'

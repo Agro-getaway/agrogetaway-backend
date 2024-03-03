@@ -123,11 +123,35 @@ def reject_farm(db: Session, farm_dict):
 
 def get_all_approved_farms(db: Session,):
     farms = Farms.get_approved_farms(db)
-    return farms
+    farms_data = [serialize_farm(farm) for farm in farms]
+    return farms_data
+def serialize_farm(farm):
+    return {
+        "id": farm.id,
+        "name": farm.name,
+        "location": farm.Location,
+        "status": farm.status,
+        "method": farm.method,
+        "services": farm.services,
+        "farm_description": farm.farm_description,
+        "method_description": farm.method_description,
+        "farmer": {
+            "id": farm.modelfarmer.id,
+            "firstname": farm.modelfarmer.firstname,
+            "lastname": farm.modelfarmer.lastname,
+            "email": farm.modelfarmer.email,
+            "phone_number": farm.modelfarmer.phonenumber, 
+            "role": farm.modelfarmer.role
+
+        },
+        "images": [image.image_url for image in farm.images]
+    }
 
 def pending_farms(db: Session,):
     farms = Farms.get_pending_farms(db)
-    return farms
+    farms_data = [serialize_farm(farm) for farm in farms]
+
+    return farms_data
 
 def get_pending_farms_count(db: Session,):
     farms = Farms.get_pending_count(db)
