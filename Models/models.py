@@ -333,7 +333,7 @@ class Farms(Base):
     
     @staticmethod
     def get_pending_farms(db: Session):
-        return db.query(Farms).options(joinedload(Farms.images),joinedload(Farms.modelfarmer)).all()
+        return db.query(Farms).options(joinedload(Farms.images),joinedload(Farms.modelfarmer)).filter(Farms.status == "requesting").all()
     
     @staticmethod
     def get_pending_count(db_session):
