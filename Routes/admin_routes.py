@@ -35,7 +35,7 @@ async def generate_signup_token_for_admin(emailbody: dict):
                 "email": email, 
                 "token": return_data["token"],
                 "status": return_data["status"],
-                "time": return_data["time_created"],
+                "time": return_data["time"],
                 "added_by": return_data["added_by"],
                 }
         else:
