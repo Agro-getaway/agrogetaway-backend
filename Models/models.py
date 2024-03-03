@@ -309,12 +309,12 @@ class Farms(Base):
         return db_session.query(Farms).all()
     
     @staticmethod
-    def update_farm_data(db_session, id, status, approved_by_id):
-        farm_data = db_session.query(Farms).filter(Farms.id == id).first()
+    def update_farm_data(db:Session, id, status, approved_by_id):
+        farm_data = db.query(Farms).filter(Farms.id == id).first()
         if farm_data:
             farm_data.status = status
             farm_data.approved_by = approved_by_id
-            db_session.commit()
+            db.commit()
             return farm_data
         else:
             raise Exception("Farm not found")
@@ -699,6 +699,9 @@ class Event(Base):
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     image_url = Column(String)
+    status = Column(String, default="requesting")
+    approved_by = Column(Integer, nullable=True)
+    added_at = Column(DateTime, default=datetime.utcnow)
 
     @staticmethod
     def create_event(db_session, name, description, start_time, end_time, image_url):
@@ -714,6 +717,29 @@ class Event(Base):
     @staticmethod
     def get_all_events(db_session):
         return db_session.query(Event).all()
+    
+    @staticmethod
+    def approving_an_event(db_session, id, admin_id):
+        event = db_session.query(Event).filter(Event.id == id).first()
+        if event:
+            event.status = "approved"
+            event.approved_by = admin_id
+            db_session.commit()
+            return event
+        else:
+            raise Exception("Event not found")
+        
+    @staticmethod
+    def displaying_approved_events(db_session):
+        return db_session.query(Event).filter(Event.status == "approved").all()
+    
+    @staticmethod
+    def displaying_pending_events(db_session):
+        return db_session.query(Event).filter(Event.status == "requesting").all()
+    
+    @staticmethod
+    def get_pending_count(db_session):
+        return db_session.query(Event).filter(Event.status == "requesting").count()
     
     @staticmethod
     def update_event(db_session, id, name, description, start_time, end_time, image_url):

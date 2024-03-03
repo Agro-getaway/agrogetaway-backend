@@ -5,7 +5,11 @@ from Controllers.event_controllers import (
     create_event,
     get_events_for_farm, 
     update_event,
-    get_all_events
+    get_all_events,
+    get_approved_events,
+    approve_event,
+    get_pending_events,
+    get_pending_events_count
     )
 router = APIRouter()
 def get_db():
@@ -34,3 +38,21 @@ def get_all_events_route(db: Session = Depends(get_db)):
 @router.put("/update_events/")
 def update_event_route(event_id: int, update_data: dict, db: Session = Depends(get_db)):
     return update_event(db=db, event_id=event_id, update_data=update_data)
+
+@router.get("/get_approved_events/")
+def get_approved_events_route(db: Session = Depends(get_db)):
+    return get_approved_events(db=db)
+
+@router.put("/approve_event/")
+def approve_event_route(event_data: dict, db: Session = Depends(get_db)):
+    event_id = event_data["event_id"]
+    admin_id = event_data["admin_id"]
+    return approve_event(db=db, event_id=event_id, admin_id=admin_id)
+
+@router.get("/get_pending_events/")
+def get_pending_events_route(db: Session = Depends(get_db)):
+    return get_pending_events(db=db)
+
+@router.get("/get_pending_events_count/")
+def get_pending_events_count_route(db: Session = Depends(get_db)):
+    return get_pending_events_count(db=db)
