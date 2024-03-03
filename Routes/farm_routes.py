@@ -13,7 +13,8 @@ from Controllers.farm_controllers import (
     get_approved_farms_count,
     get_farm_data_for_farmer,
     update_farm_stored,
-    delete_farm
+    delete_farm,
+    get_farm_by_id
 )
 
 router = APIRouter()
@@ -121,5 +122,12 @@ async def update_farm_stored_route(farm: dict, db: Session = Depends(get_db)):
 async def delete_farm_route(farm_id: int, db: Session = Depends(get_db)):
     try:
         return delete_farm(db, farm_id)
+    except Exception as e:
+        return HTTPException(status_code=400, detail=str(e))
+    
+@router.get("/get_farm_by_id")
+async def get_farm_by_id_route(farm_id: int, db: Session = Depends(get_db)):
+    try:
+        return get_farm_by_id(db, farm_id)
     except Exception as e:
         return HTTPException(status_code=400, detail=str(e))

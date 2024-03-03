@@ -301,9 +301,9 @@ class Farms(Base):
         return farm_data
     
     @staticmethod
-    def get_farm_data_by_id(db_session, id):
-        return db_session.query(Farms).filter(Farms.id == id).first()
-    
+    def get_farm_data_by_id(db: Session, id):
+        # return db_session.query(Farms).filter(Farms.id == id).first()
+        return db.query(Farms).options(joinedload(Farms.images),joinedload(Farms.modelfarmer)).filter(Farms.id == id).first()
     @staticmethod
     def get_all_farm_data(db_session):
         return db_session.query(Farms).all()

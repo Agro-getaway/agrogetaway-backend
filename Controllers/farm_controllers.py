@@ -185,4 +185,5 @@ def delete_farm(db: Session,farm):
 
 def get_farm_by_id(db: Session,farm_id):
     farm = Farms.get_farm_data_by_id(db, farm_id)
-    return farm
+    farm_data = serialize_farm(farm)
+    return farm_data
