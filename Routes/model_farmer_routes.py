@@ -7,7 +7,8 @@ from Connections.connections import SessionLocal
 from Controllers.model_farmers_controllers import (
     create_user, 
     send_password_reset,
-    reset_user_password
+    reset_user_password,
+    update_model_farmer_controller
 )
 from Controllers.admin_controllers import (
     generate_signup_token, 
@@ -79,6 +80,14 @@ async def reset_password_endpoint(token_and_password: dict, db: Session = Depend
     try:
         reset_user_password(db,token, new_password)
         return {"message": "Password reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@router.put("/update_model_farmer")
+async def update_model_farmer(user: dict, db: Session = Depends(get_db)):
+    try:
+        update_model_farmer_controller(db, user)
+        return {"message": "User updated successfully", "status": 200}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     

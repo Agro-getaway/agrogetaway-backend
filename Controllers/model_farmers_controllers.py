@@ -219,3 +219,10 @@ def get_user_by_id(id):
         return user
     else:
         raise HTTPException(status_code=404, detail="User not found")
+    
+def update_model_farmer_controller(db: Session, user: dict):
+    id = user.get('id')
+    experience = user.get('experience')
+    background = user.get('background')
+    ModelFarmers.update_modal_farmer(db, id, experience, background)
+    return {"message": "User updated successfully", "status": 200}

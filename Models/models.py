@@ -64,8 +64,8 @@ class ModelFarmers(Base):
     role = Column(String)
     phonenumber = Column(String)
     password = Column(String)
-    # experience = Column(String)
-    # background = Column(String)
+    experience = Column(String)
+    background = Column(String)
     farms = relationship("Farms", back_populates="modelfarmer")
 
     @staticmethod
@@ -98,7 +98,15 @@ class ModelFarmers(Base):
         if phone:
             query = query.filter(ModelFarmers.phonenumber == phone)
         return query.first()
-
+    
+    @staticmethod
+    def update_modal_farmer(db_session, id, experience, background):
+        farmer = db_session.query(ModelFarmers).filter(ModelFarmers.id == id).first()
+        farmer.experience = experience
+        farmer.background = background
+        db_session.commit()
+        return farmer
+    
 class Admin(Base):
     __tablename__ = 'admin'
 

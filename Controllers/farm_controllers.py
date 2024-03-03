@@ -141,8 +141,9 @@ def serialize_farm(farm):
             "lastname": farm.modelfarmer.lastname,
             "email": farm.modelfarmer.email,
             "phone_number": farm.modelfarmer.phonenumber, 
+            "experience": farm.modelfarmer.experience,
+            "background": farm.modelfarmer.background,
             "role": farm.modelfarmer.role
-
         },
         "images": [image.image_url for image in farm.images]
     }
