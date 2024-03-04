@@ -7,8 +7,8 @@
 </head>
 <body>
     <h1>Upload Files</h1>
-    <form action="http://127.0.0.1:8002/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="files" multiple>
+    <form action="http://localhost:5000/api/users/upload-image" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" multiple>
         <button type="submit">Upload</button>
     </form>
 </body>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Event</title>
+</head>
+<body>
+    <h1>Create Event</h1>
+    <form action="http://localhost:8002/events/create_event/" method="post" enctype="multipart/form-data">
+        <div>
+            <label for="name">Event Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div>
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" required></textarea>
+        </div>
+        <div>
+            <label for="start_time">Start Time:</label>
+            <input type="datetime-local" id="start_time" name="start_time" required>
+        </div>
+        <div>
+            <label for="end_time">End Time:</label>
+            <input type="datetime-local" id="end_time" name="end_time" required>
+        </div>
+        <div>
+            <label for="added_by"> Added by:</label>
+            <input typ="number" id = "added_by" name = "added_by" required>
+        </div>
+        <div>
+            <label for="file">Event Image:</label>
+            <input type="file" id="file" name="file" required>
+        </div>
+        <button type="submit">Create Event</button>
+    </form>
+</body>
+</html>

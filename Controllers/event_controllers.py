@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException
+from fastapi import UploadFile
 from Models.models import Event,Admin
+import requests
 from sqlalchemy.orm import Session
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -9,13 +11,31 @@ from Connections.token_and_keys import (
     EMAIL,
     EMAIL_PASSWORD,
 )
+
 def create_event(db : Session, event_data):
-    db_event = Event(**event_data)
+    # print(event_data)
+    file_to_upload: UploadFile = event_data["file"]
+    file_content = file_to_upload.file.read()
+    files = {'file': (file_to_upload.filename, file_content, file_to_upload.content_type)}
+    upload_url = 'https://ettaka-lyo-backend.onrender.com/api/users/upload-image'
+    response = requests.post(upload_url, files=files)
+    if response.status_code == 200:
+        upload_results = response.json() 
+        image_url = upload_results.get("data", {}).get("imageUrl", "")
+    new_event_data = {
+        "name": event_data["name"],
+        "description": event_data["description"],
+        "start_time": event_data["start_time"],
+        "end_time": event_data["end_time"],
+        "image_url": image_url,
+        "added_by" : event_data["added_by"]
+    }
+    db_event = Event(**new_event_data)
     db.add(db_event)
     db.commit()
     db.refresh(db_event)
     send_event_approval_email_to_admins(db, db_event.name)
-    return {"message": "Event created successfully", "status": 200, "event_id": db_event.id}
+    return {"message": "Event created successfully", "status": 200, "event_data": new_event_data}
 
 def send_event_approval_email_to_admins(db: Session, event_name):
     sender_email = EMAIL
@@ -68,6 +88,9 @@ def send_event_approval_email_to_admins(db: Session, event_name):
     
 def get_all_events(db : Session):
     return db.query(Event).all()
+
+def get_events_for_auser(db: Session, id ):
+    return Event.get_event_for_a_user(db, id)
 
 def get_events_for_farm(db : Session, farm_id):
     return db.query(Event).filter(Event.farm_id == farm_id).all()

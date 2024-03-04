@@ -700,12 +700,14 @@ class Event(Base):
     end_time = Column(DateTime)
     image_url = Column(String)
     status = Column(String, default="requesting")
+    added_by = Column(Integer)
     approved_by = Column(Integer, nullable=True)
     added_at = Column(DateTime, default=datetime.utcnow)
 
     @staticmethod
-    def create_event(db_session, name, description, start_time, end_time, image_url):
-        event = Event(name=name, description=description, start_time=start_time, end_time=end_time, image_url=image_url)
+    def create_event(db_session, name, description, start_time, end_time, image_url,added_by):
+        event = Event(name=name, description=description, start_time=start_time, end_time=end_time, image_url=image_url, added_by=added_by)
+
         db_session.add(event)
         db_session.commit()
         return event
@@ -717,6 +719,10 @@ class Event(Base):
     @staticmethod
     def get_all_events(db_session):
         return db_session.query(Event).all()
+    
+    @staticmethod
+    def get_event_for_a_user(db_session, added_by):
+        return db_session.query(Event).filter(Event.added_by == added_by).all()
     
     @staticmethod
     def approving_an_event(db_session, id, admin_id):
