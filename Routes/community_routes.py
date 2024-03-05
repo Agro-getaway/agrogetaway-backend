@@ -7,7 +7,9 @@ from Controllers.community_controllers import (
     create_community,
     add_community_follower,
     create_community_message,
-    community_messages_with_sender_info
+    community_messages_with_sender_info,
+    get_communities_for_user_controller,
+    get_communities_not_for_user_controller
 )
 
 router = APIRouter()
@@ -48,3 +50,11 @@ def create_message_in_community(community_message: dict, db: Session = Depends(g
 def read_community_messages(community_id: int, db: Session = Depends(get_db)):
     messages = community_messages_with_sender_info(db_session=db, community_id=community_id)
     return messages
+
+@router.get("/communities/user/{user_id}")#, response_model=List[CommunityResponse])
+def get_communities_for_user(user_id: int, db: Session = Depends(get_db)):
+    return get_communities_for_user_controller(db=db, user_id=user_id)
+
+@router.get("/communities/not-user/{user_id}")#, response_model=List[CommunityResponse])
+def get_communities_not_for_user(user_id: int, db: Session = Depends(get_db)):
+    return get_communities_not_for_user_controller(db=db, user_id=user_id)

@@ -72,3 +72,41 @@ def community_messages_with_sender_info(db_session: Session, community_id: int):
         }
         for message in messages
     ]
+
+def get_communities_for_user_controller(db: Session, user_id: int):
+    communities = db.query(Community, Farmers).join(CommunityFollowers, CommunityFollowers.community_id == Community.id).join(Farmers, Farmers.id == Community.created_by).filter(CommunityFollowers.follower_id == user_id).all()
+    
+    return [
+        {
+            "community_id": community.id,
+            "name": community.name,
+            "profile_picture": community.profile_picture,
+            "created_by": {
+                "id": creator.id,
+                "name": creator.firstname + " " + creator.lastname, # Assuming you have firstname and lastname fields
+                "email": creator.email
+            },
+            "created_at": community.created_at,
+        }
+        for community, creator in communities
+    ]
+
+def get_communities_not_for_user_controller(db: Session, user_id: int):
+    user_communities_subquery = db.query(CommunityFollowers.community_id).filter(CommunityFollowers.follower_id == user_id).subquery()
+    
+    communities = db.query(Community, Farmers).join(Farmers, Farmers.id == Community.created_by).filter(~Community.id.in_(user_communities_subquery)).all()
+    
+    return [
+        {
+            "community_id": community.id,
+            "name": community.name,
+            "profile_picture": community.profile_picture,
+            "created_by": {
+                "id": creator.id,
+                "name": creator.firstname + " " + creator.lastname,
+                "email": creator.email
+            },
+            "created_at": community.created_at,
+        }
+        for community, creator in communities
+    ]
