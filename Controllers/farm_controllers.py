@@ -25,40 +25,37 @@ from Connections.token_and_keys import (
 )
 
 def create_farm(db: Session, new_farm: dict, files: List[UploadFile]):
-    # Creating a farm entry without images first
+    upload_results = []
     farm = Farms.create_farm_data(new_farm['farmer_id'],new_farm['Location'],"requesting", new_farm['name'], new_farm['method'], new_farm['services'],new_farm['farm_description'],new_farm['method_description'])
     db.add(farm)
     db.commit()
     db.refresh(farm)
-    
+    # print("no error here")
     files_to_upload = [('files', (file.filename, file.file.read(), file.content_type)) for file in files]
     upload_url = 'https://ettaka-lyo-backend.onrender.com/uploadImages'
-    response = requests.post(upload_url, files=files_to_upload)
    
+    response = requests.post(upload_url, files=files_to_upload)
+    
     if response.status_code == 200:
         upload_results = response.json() 
-
-        for image_url in upload_results:
-            new_farm_image = FarmImage(farm_id=farm.id, image_url=image_url, added_at=datetime.utcnow())
-            db.add(new_farm_image)
-        
-        db.commit()
-        # try:
-        #     if upload_results:
-        #         first_image_url = upload_results[0]['url']
-        #         # farm.Image_url = first_image_url
-        #         db.commit()
-        # except Exception as e:
-        #     print(f"Error updating farm image URL: {e}")
-        #     db.rollback()
+        try:
+            for image_url in upload_results:  
+                new_farm_image = FarmImage(farm_id=farm.id, image_url=image_url, added_at=datetime.utcnow())
+                db.add(new_farm_image)
+            
+            db.commit()
+            db.refresh(farm)
+        except Exception as e:
+            print(f"Error updating farm image URL: {e}")
+            db.rollback()
     else:
         print(f"Failed to upload images")
-    
+        
     farmer = ModelFarmers.get_model_farmer_by_id(db, new_farm['farmer_id'])
     full_name = f"{farmer.firstname} {farmer.lastname}"
     send_approval_email_to_admins(db, full_name, new_farm['Location'], farm.id)
     
-    return {"message": "Farm created successfully", "status": 200, "farm_id": farm.id, "image_urls": [result['url'] for result in upload_results]}
+    return {"message": "Farm created successfully", "status": 200, "farm_id": farm.id, "image_urls": upload_results}
 
 def send_approval_email_to_admins(db: Session, farmer_name, location, farm_id):
     sender_email = EMAIL

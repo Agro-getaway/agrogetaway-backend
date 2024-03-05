@@ -74,10 +74,9 @@ def send_booking_email(booking_data):
     farmer = get_user_by_id(farmer_id)
     if not farmer:
         return {"message": "Farmer not found", "status": 404}
-    farm_name = f"{farmer.firstname} {farmer.lastname}"  # Assuming farmer object has attributes firstname and lastname
-    farm_email = farmer.email  # Assuming farmer object has attribute email
+    farm_name = f"{farmer.firstname} {farmer.lastname}" 
+    farm_email = farmer.email  
 
-    # Send email to the tourist
     msg_to_tourist = MIMEMultipart("related")
     msg_to_tourist["From"] = sender_email
     msg_to_tourist["To"] = tourist_email
@@ -88,6 +87,7 @@ def send_booking_email(booking_data):
     <p>Best Regards,</p>
     <p>Agrogetaway Team</p>
     """
+    
     msg_to_tourist.attach(MIMEText(message_to_tourist, "html"))
     server.send_message(msg_to_tourist)
 
