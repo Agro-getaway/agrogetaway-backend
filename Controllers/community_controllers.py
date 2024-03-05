@@ -8,13 +8,22 @@ from hashing import Harsher
 from upload import FirebaseUpload
 import secrets
 import smtplib
+import requests
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
 def create_community(db: Session, community_data):
-    db_community = Community(name=community_data["name"], profile_picture=community_data["profile_picture"], created_by=community_data["created_by"])
+    file_to_upload: UploadFile = community_data["file"]
+    file_content = file_to_upload.file.read()
+    files = {'file': (file_to_upload.filename, file_content, file_to_upload.content_type)}
+    upload_url = 'https://ettaka-lyo-backend.onrender.com/api/users/upload-image'
+    response = requests.post(upload_url, files=files)
+    if response.status_code == 200:
+        upload_results = response.json() 
+        image_url = upload_results.get("data", {}).get("imageUrl", "")
+    db_community = Community(name=community_data["name"], profile_picture=image_url, created_by=community_data["created_by"])
     db.add(db_community)
     db.commit()
     db.refresh(db_community)

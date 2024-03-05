@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Community Form</title>
+</head>
+
+<body>
+    <h2>Create Community</h2>
+    <form action="http://localhost:8002/community/create-communities/" method="post" enctype="multipart/form-data">
+        <label for="name">Community Name:</label><br>
+        <input type="text" id="name" name="name" required><br>
+
+        <label for="file">Upload File:</label><br>
+        <input type="file" id="file" name="file" required><br>
+
+        <label for="created_by">Created By (User ID):</label><br>
+        <input type="number" id="created_by" name="created_by" required><br><br>
+
+        <input type="submit" value="Create Community">
+    </form>
+</body>
+</html>

@@ -34,7 +34,7 @@ def create_event_route(
     start_time : datetime = Form(...),
     end_time : datetime = Form(...),
     file: UploadFile = File(...),
-    added_by: int = File(...),
+    added_by: int = Form(...),
     db: Session = Depends(get_db)):
 
     event_data = {

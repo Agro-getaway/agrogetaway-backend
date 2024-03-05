@@ -23,7 +23,17 @@ async def read_root():
     return {"Community" : "Hello World"}
 
 @router.post("/create-communities/")
-def create_community_route(community: dict, db: Session = Depends(get_db)):
+def create_community_route(
+    name: str = Form(...),
+    file: UploadFile = File(...),
+    created_by: int = Form(...),
+    db: Session = Depends(get_db)):
+
+    community = {
+        "name": name,
+        "file": file,
+        "created_by": created_by
+    }
     return create_community(db = db, community_data = community)
 
 @router.post("/communities/followers/")
