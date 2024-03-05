@@ -407,11 +407,17 @@ class Booking(Base):
     id = Column(Integer, primary_key=True, index=True)
     Farmid = Column(Integer, ForeignKey('farms.id'))
     Touristid = Column(Integer, ForeignKey('tourists.id'))
+    touristname = Column(String)
+    touristcontact = Column(String)
+    touristnumber = Column(Integer)
     status  = Column(String)
     start_datetime = Column(DateTime)
     end_datetime = Column(DateTime)
     payment_status = Column(String)
     payment_amount = Column(Float)
+    is_institution = Column(Boolean, default=False)
+    student_number = Column(Integer, nullable=True)
+    main_teacher_fullname = Column(String, nullable=True)
     is_cancelled = Column(Boolean, default=False)
     cancellation_fee = Column(Float, default=0.0)
     rescheduled_to = Column(DateTime, nullable=True)
@@ -421,10 +427,11 @@ class Booking(Base):
     tourist = relationship("Tourist", back_populates="bookings")
 
     @staticmethod
-    def create_booking(Farmid, Touristid, status, start_datetime, end_datetime, payment_status, payment_amount):
+    def create_booking(Farmid, Touristid, status, start_datetime, end_datetime, payment_status, payment_amount, is_institution, student_number, main_teacher_fullname, tourist_name, tourist_contact, tourist_number):
         print("""Creating booking""")
         booking = Booking(Farmid=Farmid, Touristid=Touristid, status=status, start_datetime=start_datetime, 
-                          end_datetime=end_datetime, payment_status=payment_status, payment_amount=payment_amount)
+                          end_datetime=end_datetime, payment_status=payment_status, payment_amount=payment_amount, is_institution=is_institution,
+                            student_number=student_number, main_teacher_fullname=main_teacher_fullname, touristname=tourist_name, touristcontact=tourist_contact, touristnumber=tourist_number)
         return booking
     
     @staticmethod

@@ -32,12 +32,24 @@ def create_booking_controller(db:Session,new_booking: dict):
         new_booking["end_datetime"],
         new_booking["payment_status"],
         new_booking["payment_amount"],
+        new_booking["is_institution"],
+        new_booking["student_number"],
+        new_booking["main_teacher_fullname"],
+        new_booking["tourist_name"],
+        new_booking["tourist_contact"],
+        new_booking["tourist_number"],
     )
+    tourist_data = {
+        "farm_id": new_booking["farm_id"],
+        "tourist_id": new_booking["tourist_id"],
+        "tourist_name": new_booking["tourist_name"],
+        "tourist_contact": new_booking["tourist_contact"],
+    }
     try:
         db.add(booking)
         db.commit()
         db.refresh(booking)
-        send_booking_email(new_booking)
+        send_booking_email(db,tourist_data)
         return {"message": "Booking created successfully", "status": 200}
 
     except Exception as e:
@@ -46,7 +58,7 @@ def create_booking_controller(db:Session,new_booking: dict):
         return {"message": "An error occured", "status": 500}
 
 
-def send_booking_email(booking_data):
+def send_booking_email(db,booking_data):
     sender_email = EMAIL
     sender_password = EMAIL_PASSWORD
 
@@ -61,7 +73,7 @@ def send_booking_email(booking_data):
         print(f"SMTP Authentication Error: {e}")
         return {"message": "Failed to send email", "status": 500}
 
-    tourist = get_tourist_by_id(booking_data["tourist_id"])
+    tourist = get_tourist_by_id(db,booking_data["tourist_id"])
     if not tourist:
         return {"message": "Tourist not found", "status": 404}
     tourist_name = tourist.Name
@@ -71,7 +83,7 @@ def send_booking_email(booking_data):
     if not farm:
         return {"message": "Farm not found", "status": 404}
     farmer_id = farm.farmer_id
-    farmer = get_user_by_id(farmer_id)
+    farmer = get_user_by_id(db,farmer_id)
     if not farmer:
         return {"message": "Farmer not found", "status": 404}
     farm_name = f"{farmer.firstname} {farmer.lastname}" 

@@ -111,7 +111,6 @@ def approve_event(db : Session, event_id, admin_id):
     except Exception as e:
         return {"message": str(e), "status": 400}
     
-
 def get_pending_events(db : Session):
     try:
         events = Event.displaying_pending_events(db)
