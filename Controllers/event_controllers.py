@@ -14,6 +14,11 @@ from Connections.token_and_keys import (
 
 def create_event(db : Session, event_data):
     # print(event_data)
+    try:
+        event_data['added_by'] = int(event_data['added_by'])
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid added_by. Must be an integer.")
+    
     file_to_upload: UploadFile = event_data["file"]
     file_content = file_to_upload.file.read()
     files = {'file': (file_to_upload.filename, file_content, file_to_upload.content_type)}
