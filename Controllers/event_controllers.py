@@ -109,6 +109,7 @@ def update_event(db : Session, event_id, update_data):
         return db_event
     else:
         return None
+    
 def approve_event(db : Session, event_id, admin_id):
     try: 
         event = Event.approving_an_event(db, event_id,admin_id)

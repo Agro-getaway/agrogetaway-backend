@@ -28,7 +28,7 @@ async def read_root():
 def create_community_route(
     name: str = Form(...),
     file: UploadFile = File(...),
-    created_by: int = Form(...),
+    created_by: str = Form(...),
     db: Session = Depends(get_db)):
 
     community = {

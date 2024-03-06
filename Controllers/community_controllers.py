@@ -15,6 +15,11 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
 def create_community(db: Session, community_data):
+    try:
+        community_data['created_by'] = int(community_data['created_by'])
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid created_by. Must be an integer.")
+    
     file_to_upload: UploadFile = community_data["file"]
     file_content = file_to_upload.file.read()
     files = {'file': (file_to_upload.filename, file_content, file_to_upload.content_type)}
