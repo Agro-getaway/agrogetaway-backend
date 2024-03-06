@@ -26,6 +26,11 @@ from Connections.token_and_keys import (
 
 def create_farm(db: Session, new_farm: dict, files: List[UploadFile]):
     upload_results = []
+    try:
+        new_farm['farmer_id'] = int(new_farm['farmer_id'])
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid farmer_id. Must be an integer.")
+    
     farm = Farms.create_farm_data(new_farm['farmer_id'],new_farm['Location'],"requesting", new_farm['name'], new_farm['method'], new_farm['services'],new_farm['farm_description'],new_farm['method_description'])
     db.add(farm)
     db.commit()

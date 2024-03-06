@@ -31,7 +31,7 @@ async def read_root():
 
 @router.post("/create_farm") 
 async def create_farm_route(
-    farmer_id: int = Form(...),
+    farmer_id: str = Form(...),
     location: str = Form(...), 
     name: str = Form(...), 
     method: str = Form(...), 
