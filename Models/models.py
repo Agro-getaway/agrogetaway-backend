@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Boolean, Float, Integer, String, DateTime,ForeignKey,Enum as SQLAEnum
+from sqlalchemy import Column, Text, Boolean, Float, Integer, String, DateTime,ForeignKey,Enum as SQLAEnum
 from sqlalchemy.orm import relationship,joinedload
 from sqlalchemy.orm import Session
 from enum import Enum
@@ -264,11 +264,11 @@ class Farms(Base):
     farmer_id = Column(Integer, ForeignKey('modelfarmers.id'))
     Location = Column(String)
     status = Column(String)
-    name = Column(String)
-    method = Column(String)
-    services = Column(String)
-    farm_description = Column(String)
-    method_description = Column(String)
+    name = Column(String(2000))
+    method = Column(String(2000))
+    services = Column(String(2000))
+    farm_description = Column(Text)
+    method_description = Column(Text)
     added_at = Column(DateTime, default=datetime.utcnow)
     approved_by = Column(Integer, nullable=True)
 
