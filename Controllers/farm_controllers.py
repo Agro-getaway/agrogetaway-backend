@@ -165,12 +165,14 @@ def get_approved_farms_count(db: Session,):
     return {"count_value" : farms}
 
 def get_farm_data_for_farmer(db: Session, farmer_id):
+    print(f"The farmer id in controller {farmer_id}")
     farms = Farms.get_farm_data(db, farmer_id)
 
-    for farm in farms:
-        farm_id = farm.id
-        farm_images = fetch_farm_images(db, farm_id)
-        farm.images = farm_images
+    # for farm in farms:
+    #     farm_id = farm.id
+    #     farm_images = fetch_farm_images(db, farm_id)
+    #     farm_data = Farms.get_farm_data_by_id(db, farm_id)
+    #     # print(farm_data)
 
     return farms
 

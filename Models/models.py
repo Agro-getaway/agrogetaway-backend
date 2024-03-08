@@ -285,8 +285,9 @@ class Farms(Base):
         return farm
 
     @staticmethod
-    def get_farm_data(db_session, farmer_id):
-        return db_session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
+    def get_farm_data(db: Session, farmer_id):
+        # return db_session.query(Farms).filter(Farms.farmer_id == farmer_id).all()
+        return db.query(Farms).options(joinedload(Farms.images)).filter(Farms.farmer_id == farmer_id).all()
     
     @staticmethod
     def update_farm_stored_data(db_session, id, Location, Name, Method, Services, farm_description, method_description):

@@ -100,11 +100,9 @@ async def get_approved_farms_count_route(db: Session = Depends(get_db)):
         return HTTPException(status_code=400, detail=str(e))
     
 @router.get("/get_farm_data_for_farmer/")
-async def get_farm_data_for_farmer_route(
-    farmer_id: int,
-    db: Session = Depends(get_db)
-):
-   
+async def get_farm_data_for_farmer_route(farmer_id: int,db: Session = Depends(get_db)):
+    print(f"The farmer id is {farmer_id}")
+    print(f"The dtype of farmer id is {type(farmer_id)}")
     try:
         return get_farm_data_for_farmer(db, farmer_id)
     except Exception as e:
